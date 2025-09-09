@@ -153,8 +153,6 @@ export class PropertyService {
     `;
 
     const result = await dbInstance.query(query, [userId]);
-
-    console.log(result.rows);
     
     return result.rows.map(row => ({
       id: row.id,
@@ -486,5 +484,28 @@ export class PropertyService {
         parking_type: row.parking_type as ParkingType
       } : undefined
     }));
+  }
+
+  async addMedia(
+    propertyId: number,
+    items: Array<{ media_type: 'image' | 'video'; url: string }>
+  ): Promise<void> {
+    if (!items.length) return;
+    const client = await dbInstance.connection();
+    try {
+      await client.query('BEGIN');
+      for (const item of items) {
+        await client.query(
+          'INSERT INTO property_media (property_id, media_type, url) VALUES ($1, $2, $3)',
+          [propertyId, item.media_type, item.url]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw new BadRequestException('Failed to save media');
+    } finally {
+      client.release();
+    }
   }
 }

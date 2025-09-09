@@ -12,8 +12,13 @@ import {
   ValidationPipe,
   UsePipes,
   UseGuards,
-  Req
+  Req,
+  UploadedFiles,
+  UseInterceptors
 } from '@nestjs/common';
+import { FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { PropertyService } from './Providers/property.service';
 import { CreatePropertyDto, UpdatePropertyDto, PropertyResponseDto } from './dto/property.dto';
 import { JwtAuthGuard } from '../User/guards/jwt-auth.guard';
@@ -31,6 +36,33 @@ export class PropertyController {
     const userId = req.user.user_uuid;
 
     return this.propertyService.createProperty(createPropertyDto,userId);
+  }
+
+  @Post(':id/media')
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'images', maxCount: 10 },
+    { name: 'video', maxCount: 1 },
+  ], {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (_req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, unique + extname(file.originalname));
+      }
+    })
+  }))
+  @HttpCode(HttpStatus.CREATED)
+  async uploadMedia(
+    @Param('id') id: string,
+    @UploadedFiles() files: { images?: any[]; video?: any[] }
+  ) {
+    const propertyId = parseInt(id);
+    const items: Array<{ media_type: 'image' | 'video'; url: string }> = [];
+    const base = '/uploads/';
+    for (const f of files.images || []) items.push({ media_type: 'image', url: base + f.filename });
+    for (const f of files.video || []) items.push({ media_type: 'video', url: base + f.filename });
+    await this.propertyService.addMedia(propertyId, items);
+    return { uploaded: items.length, items };
   }
 
   @Get()
