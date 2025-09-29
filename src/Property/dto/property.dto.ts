@@ -277,4 +277,6 @@ export class PropertyResponseDto {
   property_details?: PropertyDetailsResponseDto;
   parking?: ParkingResponseDto;
   property_size?: PropertySizeDto;
+  images?: string[];
+  videos?: string[];
 }

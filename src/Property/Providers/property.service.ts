@@ -144,7 +144,11 @@ export class PropertyService {
       SELECT 
         p.*,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
-        pk.parking_count, pk.parking_type
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
@@ -174,6 +178,8 @@ export class PropertyService {
       property_size: row.property_size,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      images: row.images || [],
+      videos: row.videos || [],
       property_details: row.rooms || row.bathrooms || row.balconies || row.other_rooms || row.floors ? {
         property_id: row.id,
         rooms: row.rooms,
@@ -195,7 +201,11 @@ export class PropertyService {
       SELECT 
         p.*,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
-        pk.parking_count, pk.parking_type
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
@@ -229,6 +239,8 @@ export class PropertyService {
       property_amenities: row.property_amenities,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      images: row.images || [],
+      videos: row.videos || [],
       property_details: row.rooms || row.bathrooms || row.balconies || row.other_rooms || row.floors ? {
         property_id: row.id,
         rooms: row.rooms,
@@ -391,7 +403,11 @@ export class PropertyService {
       SELECT 
         p.*,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
-        pk.parking_count, pk.parking_type
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
@@ -420,6 +436,8 @@ export class PropertyService {
       property_amenities: row.property_amenities,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      images: row.images || [],
+      videos: row.videos || [],
       property_details: row.rooms || row.bathrooms || row.balconies || row.other_rooms || row.floors ? {
         property_id: row.id,
         rooms: row.rooms,
@@ -441,7 +459,11 @@ export class PropertyService {
       SELECT 
         p.*,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
-        pk.parking_count, pk.parking_type
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
@@ -470,6 +492,8 @@ export class PropertyService {
       property_amenities: row.property_amenities,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      images: row.images || [],
+      videos: row.videos || [],
       property_details: row.rooms || row.bathrooms || row.balconies || row.other_rooms || row.floors ? {
         property_id: row.id,
         rooms: row.rooms,
@@ -495,10 +519,24 @@ export class PropertyService {
     try {
       await client.query('BEGIN');
       for (const item of items) {
+        // Backward-compatible insert into legacy aggregated table
         await client.query(
           'INSERT INTO property_media (property_id, media_type, url) VALUES ($1, $2, $3)',
           [propertyId, item.media_type, item.url]
         );
+
+        // New: split storage into dedicated tables
+        if (item.media_type === 'image') {
+          await client.query(
+            'INSERT INTO property_images (property_id, url) VALUES ($1, $2)',
+            [propertyId, item.url]
+          );
+        } else if (item.media_type === 'video') {
+          await client.query(
+            'INSERT INTO property_videos (property_id, url) VALUES ($1, $2)',
+            [propertyId, item.url]
+          );
+        }
       }
       await client.query('COMMIT');
     } catch (e) {
