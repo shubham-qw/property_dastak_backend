@@ -4,4 +4,3 @@ export const jwtConfig = {
     expiresIn: process.env.JWT_EXPIRES_IN || '24h', // Token expires in 24 hours
   },
 };
-

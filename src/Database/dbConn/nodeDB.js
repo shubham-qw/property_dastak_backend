@@ -1,9 +1,9 @@
-import DBClass, { dbConfig } from './dbClass';
-import Config from '../../config';
+const DBClass = require('./dbClass.js');
+const Config = require('../../config/index');
 
 const {databaseConfig} = Config;
 // Database configuration with proper environment variable handling
-const config: dbConfig = {
+const config = {
     hostname: databaseConfig.hostname || 'localhost',
     password: databaseConfig.password || 'jet123ABC',
     database: databaseConfig.database || 'test1',
@@ -14,4 +14,4 @@ const config: dbConfig = {
 // Create database instance
 const dbInstance = new DBClass(config);
 
-export default dbInstance;
+module.exports = dbInstance;

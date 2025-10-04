@@ -6,9 +6,10 @@ import { AppService } from './app.service';
 import { UserModule } from './User/user.module';
 import { PropertyModule } from './Property/property.module';
 import { LeadsModule } from './Leads/leads.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
-  imports: [UserModule, PropertyModule, LeadsModule],
+  imports: [UserModule, PropertyModule, LeadsModule,MediaModule],
   controllers: [AppController],
   providers: [
     AppService,

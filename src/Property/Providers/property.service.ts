@@ -139,7 +139,7 @@ export class PropertyService {
     }
   }
 
-  async getAllProperties(userId: string): Promise<PropertyResponseDto[]> {
+  async getAllPropertiesByUser(userId: string): Promise<PropertyResponseDto[]> {
     const query = `
       SELECT 
         p.*,
@@ -157,7 +157,63 @@ export class PropertyService {
     `;
 
     const result = await dbInstance.query(query, [userId]);
-    
+     
+    return result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      property_for: row.property_for as PropertyFor,
+      property_type: row.property_type,
+      city: row.city,
+      locality: row.locality,
+      sub_locality: row.sub_locality,
+      apartment: row.apartment,
+      availability_status: row.availability_status as AvailabilityStatus,
+      property_age: row.property_age,
+      ownership: row.ownership as Ownership,
+      price_per_sqft: row.price_per_sqft,
+      brokerage_charge: row.brokerage_charge,
+      description: row.description,
+      property_features: row.property_features,
+      property_amenities: row.property_amenities,
+      property_size: row.property_size,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      images: row.images || [],
+      videos: row.videos || [],
+      property_details: row.rooms || row.bathrooms || row.balconies || row.other_rooms || row.floors ? {
+        property_id: row.id,
+        rooms: row.rooms,
+        bathrooms: row.bathrooms,
+        balconies: row.balconies,
+        other_rooms: row.other_rooms,
+        floors: row.floors
+      } : undefined,
+      parking: row.parking_count || row.parking_type ? {
+        property_id: row.id,
+        parking_count: row.parking_count,
+        parking_type: row.parking_type as ParkingType
+      } : undefined
+    }));
+  }
+
+  async getAllProperties(userId: string): Promise<PropertyResponseDto[]> {
+    const query = `
+      SELECT 
+        p.*,
+        pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos
+      FROM properties p
+      LEFT JOIN property_details pd ON p.id = pd.property_id
+      LEFT JOIN parking pk ON p.id = pk.property_id
+      ORDER BY p.created_at DESC
+    `;
+
+    const result = await dbInstance.query(query);
+     
     return result.rows.map(row => ({
       id: row.id,
       title: row.title,

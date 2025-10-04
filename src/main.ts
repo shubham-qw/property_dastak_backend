@@ -1,11 +1,13 @@
+import { ConfigModule } from '@nestjs/config';
+ConfigModule.forRoot();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { join } from 'path';
-
+import {Pool} from 'pg'
 import { WebSocketServer, WebSocket } from "ws";
-import { Pool } from "pg";
+import nodeDB from './Database/dbConn/nodeDB';
 
 type IncomingMsg = {
   propertyId?: string;
@@ -20,21 +22,10 @@ type Session = {
   startTime: Date;
 };
 
-const PG_USER = process.env.PG_USER ?? "admin";
-const PG_HOST = process.env.PG_HOST ?? "localhost";
-const PG_DB = process.env.PG_DB ?? "property_dastak";
-const PG_PASSWORD = process.env.PG_PASSWORD ?? "Admin@123";
-const PG_PORT = Number(process.env.PG_PORT ?? 5432);
 const WS_PORT = Number(process.env.WS_PORT ?? 4000);
 
 // PostgreSQL pool
-const pool = new Pool({
-  user: PG_USER,
-  host: PG_HOST,
-  database: PG_DB,
-  password: PG_PASSWORD,
-  port: PG_PORT,
-});
+const pool : Pool = nodeDB.getPool();
 
 pool.on("error", (err) => {
   console.error("Unexpected PG error:", err);

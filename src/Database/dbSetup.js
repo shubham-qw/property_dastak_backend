@@ -1,21 +1,21 @@
 const fs = require('fs');
 const path = require('path');
-const DBClass = require('./dbConn/dbClass');
+const db = require('./dbConn/nodeDB.js');
 
 // Database configuration
-const dbConfig = {
-    hostname: process.env.DB_HOST || 'jupiter.x2ff.com',
-    password: process.env.DB_PASSWORD || 'tracking',
-    database: process.env.DB_NAME || 'test1',
-    port: parseInt(process.env.DB_PORT) || 5432,
-    username: process.env.DB_USER || 'postgres'
-};
+// const dbConfig = {
+//     hostname: databaseConfig.hostname || 'localhost',
+//     password: databaseConfig.password || 'jet123ABC',
+//     database: databaseConfig.database || 'test1',
+//     port: parseInt(databaseConfig.port || '5432'),
+//     username: databaseConfig.username || 'postgres'
+// };
 
 // Function to read SQL files from schema directory
 function readSQLFiles(schemaDir) {
     const sqlFiles = [];
     const files = fs.readdirSync(schemaDir);
-    
+
     files.forEach(file => {
         if (file.endsWith('.sql')) {
             const filePath = path.join(schemaDir, file);
@@ -26,27 +26,26 @@ function readSQLFiles(schemaDir) {
             });
         }
     });
-    
+
     return sqlFiles;
 }
 
 // Function to setup database
 async function setupDatabase() {
-    const db = new DBClass(dbConfig);
-    
+
     try {
         console.log('Connecting to database...');
-        
+
         // Test connection
         await db.query('SELECT NOW()');
         console.log('Database connection successful!');
-        
+
         // Read all SQL files from schema directory
         const schemaDir = path.join(__dirname, 'schema');
         const sqlFiles = readSQLFiles(schemaDir);
-        
+
         console.log(`Found ${sqlFiles.length} SQL files to execute:`);
-        
+
         // Execute each SQL file
         for (const sqlFile of sqlFiles) {
             console.log(`Executing ${sqlFile.filename}...`);
@@ -72,9 +71,9 @@ async function setupDatabase() {
                 console.error('✗ Error inserting sample data:', error.message);
             }
         }
-        
+
         console.log('Database setup completed!');
-        
+
     } catch (error) {
         console.error('Database setup failed:', error);
         throw error;
@@ -98,7 +97,7 @@ async function runSetup() {
 module.exports = {
     setupDatabase,
     readSQLFiles,
-    dbConfig
+    dbConfig : db.config
 };
 
 // Run setup if this file is executed directly
