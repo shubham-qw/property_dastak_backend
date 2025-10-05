@@ -72,6 +72,20 @@ export class PropertyController {
     return this.propertyService.getAllProperties(userId);
   }
 
+  @Get('/most-clicked')
+  async mostClicked(@Query('limit') limitStr?: string) {
+    const limit = limitStr ? Math.max(1, parseInt(limitStr, 10) || 1) : 1;
+   const data = await this.propertyService.getMostClickedProperties(limit);
+
+    //If user asked for a single and none found, return 404-like empty result
+    if (limit === 1) {
+      if (!data || data.length === 0) return { message: 'No property found' };
+      return data[0];
+    }
+
+    return data;
+  }
+
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   async getPropertyById(@Param('id') id: string): Promise<PropertyResponseDto> {
@@ -86,6 +100,7 @@ export class PropertyController {
   ): Promise<PropertyResponseDto> {
     return this.propertyService.updateProperty(parseInt(id), updatePropertyDto);
   }
+
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

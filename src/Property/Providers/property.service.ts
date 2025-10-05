@@ -196,6 +196,49 @@ export class PropertyService {
     }));
   }
 
+  async getMostClickedProperties(limit = 1) {
+    // 1) Subquery top_properties computes top N property_ids by clicks
+    // 2) Join with properties + property_details + parking and fetch images/videos arrays
+    const sql = `
+      WITH top_properties AS (
+        SELECT property_id::int AS property_id, COUNT(*) AS clicks
+        FROM properties_seen_time
+        GROUP BY property_id
+        ORDER BY clicks DESC
+        LIMIT $1
+      )
+      SELECT
+        p.id,
+        p.title,
+        p.price_per_sqft,
+        p.description,
+        COALESCE((SELECT array_agg(pi.url ORDER BY pi.id) FROM property_images pi WHERE pi.property_id = p.id), ARRAY[]::text[]) AS images,
+        COALESCE((SELECT array_agg(pv.url ORDER BY pv.id) FROM property_videos pv WHERE pv.property_id = p.id), ARRAY[]::text[]) AS videos,
+        tp.clicks
+      FROM top_properties tp
+      JOIN properties p ON p.id = tp.property_id
+      LEFT JOIN property_details pd ON p.id = pd.property_id
+      LEFT JOIN parking pk ON p.id = pk.property_id
+      ORDER BY tp.clicks DESC;
+    `;
+
+    const res = await dbInstance.query(sql, [limit]);
+    // Map rows into the minimal shape required
+    const mapped = res.rows.map((r: any) => ({
+      id: r.id,
+      name: r.title,
+      price: r.price_per_sqft,
+      // choose first image URL as `image`, or fallback to null (or emoji)
+      image: Array.isArray(r.images) && r.images.length ? r.images[0] : null,
+      location: r.location,
+      description: r.description,
+      // optional debug fields you can remove
+      _clicks: Number(r.clicks ?? 0),
+    }));
+
+    return mapped;
+  }
+
   async getAllProperties(userId: string): Promise<PropertyResponseDto[]> {
     const query = `
       SELECT 
