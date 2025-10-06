@@ -28,8 +28,8 @@ export class PropertyService {
         INSERT INTO properties (
           title, property_for, property_type, city, locality, sub_locality, 
           apartment, availability_status, property_age, ownership, 
-          price_per_sqft, brokerage_charge, description, property_features, property_amenities,property_size,created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16,$17)
+           price_per_sqft, brokerage_charge, description, property_features, property_amenities, price, property_size,created_by
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING *
       `;
 
@@ -49,6 +49,7 @@ export class PropertyService {
         propertyData.description,
         propertyData.property_features,
         propertyData.property_amenities,
+         propertyData.price,
         propertyData.property_size,
         userId
       ];
@@ -122,6 +123,7 @@ export class PropertyService {
         ownership: newProperty.ownership as Ownership,
         price_per_sqft: newProperty.price_per_sqft,
         brokerage_charge: newProperty.brokerage_charge,
+         price: newProperty.price,
         description: newProperty.description,
         property_features: newProperty.property_features,
         property_amenities: newProperty.property_amenities,
@@ -172,6 +174,7 @@ export class PropertyService {
       ownership: row.ownership as Ownership,
       price_per_sqft: row.price_per_sqft,
       brokerage_charge: row.brokerage_charge,
+      price: row.price,
       description: row.description,
       property_features: row.property_features,
       property_amenities: row.property_amenities,
@@ -211,6 +214,7 @@ export class PropertyService {
         p.id,
         p.title,
         p.price_per_sqft,
+        p.price,
         p.description,
         COALESCE((SELECT array_agg(pi.url ORDER BY pi.id) FROM property_images pi WHERE pi.property_id = p.id), ARRAY[]::text[]) AS images,
         COALESCE((SELECT array_agg(pv.url ORDER BY pv.id) FROM property_videos pv WHERE pv.property_id = p.id), ARRAY[]::text[]) AS videos,
@@ -227,7 +231,7 @@ export class PropertyService {
     const mapped = res.rows.map((r: any) => ({
       id: r.id,
       name: r.title,
-      price: r.price_per_sqft,
+      price: r.price ?? r.price_per_sqft,
       // choose first image URL as `image`, or fallback to null (or emoji)
       image: Array.isArray(r.images) && r.images.length ? r.images[0] : null,
       location: r.location,
@@ -271,6 +275,7 @@ export class PropertyService {
       ownership: row.ownership as Ownership,
       price_per_sqft: row.price_per_sqft,
       brokerage_charge: row.brokerage_charge,
+      price: row.price,
       description: row.description,
       property_features: row.property_features,
       property_amenities: row.property_amenities,
@@ -333,6 +338,7 @@ export class PropertyService {
       ownership: row.ownership as Ownership,
       price_per_sqft: row.price_per_sqft,
       brokerage_charge: row.brokerage_charge,
+      price: row.price,
       description: row.description,
       property_features: row.property_features,
       property_amenities: row.property_amenities,
@@ -467,6 +473,7 @@ export class PropertyService {
           ownership: updatedProperty.ownership as Ownership,
           price_per_sqft: updatedProperty.price_per_sqft,
           brokerage_charge: updatedProperty.brokerage_charge,
+          price: updatedProperty.price,
           description: updatedProperty.description,
           property_features: updatedProperty.property_features,
           property_amenities: updatedProperty.property_amenities,
@@ -530,6 +537,7 @@ export class PropertyService {
       ownership: row.ownership as Ownership,
       price_per_sqft: row.price_per_sqft,
       brokerage_charge: row.brokerage_charge,
+      price: row.price,
       description: row.description,
       property_features: row.property_features,
       property_amenities: row.property_amenities,
@@ -586,6 +594,7 @@ export class PropertyService {
       ownership: row.ownership as Ownership,
       price_per_sqft: row.price_per_sqft,
       brokerage_charge: row.brokerage_charge,
+      price: row.price,
       description: row.description,
       property_features: row.property_features,
       property_amenities: row.property_amenities,

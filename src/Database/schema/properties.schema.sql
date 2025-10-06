@@ -21,3 +21,5 @@ CREATE TABLE IF NOT EXISTS properties (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+ALTER TABLE properties ADD COLUMN price DECIMAL(10,2) default null;

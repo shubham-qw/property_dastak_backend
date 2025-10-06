@@ -120,13 +120,18 @@ export class CreatePropertyDto {
 
   @IsOptional()
   @IsString()
-  @IsDecimal({ decimal_digits: '1,2', force_decimal: true })
+ // @IsDecimal({ decimal_digits: '1,2', force_decimal: true })
   price_per_sqft?: number;
 
   @IsOptional()
   @IsString()
-  @IsDecimal({ decimal_digits: '1,2', force_decimal: true })
+//  @IsDecimal({ decimal_digits: '1,2', force_decimal: true })
   brokerage_charge?: number;
+
+  @IsOptional()
+ // @IsString()
+ // @IsDecimal({ decimal_digits: '1,2', force_decimal: true })
+  price?: number;
 
   @IsOptional()
   @IsString()
@@ -213,6 +218,11 @@ export class UpdatePropertyDto {
   brokerage_charge?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsDecimal()
+  price?: number;
+
+  @IsOptional()
   @IsString()
   description?: string;
 
@@ -269,6 +279,7 @@ export class PropertyResponseDto {
   ownership?: Ownership;
   price_per_sqft?: number;
   brokerage_charge?: number;
+  price?: number;
   description?: string;
   property_features?: string[];
   property_amenities?: string[];
