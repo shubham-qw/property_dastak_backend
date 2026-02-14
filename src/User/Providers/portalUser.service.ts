@@ -65,8 +65,6 @@ export class PortalUserService {
       const tokenPayload = {
         sub: newUser.id,
         user_uuid: newUser.user_uuid,
-        email: newUser.email,
-        class: newUser.class
       };
 
       const access_token = this.jwtService.generateToken(tokenPayload);

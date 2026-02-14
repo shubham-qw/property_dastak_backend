@@ -5,8 +5,6 @@ import { jwtConfig } from '../../config/jwt.config';
 interface JwtPayload {
   sub: number;
   user_uuid: string;
-  email: string;
-  class: string;
 }
 
 @Injectable()

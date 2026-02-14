@@ -1,4 +1,4 @@
-CREATE TABLE properties_seen_time (
+CREATE TABLE IF NOT EXISTS properties_seen_time (
     id SERIAL PRIMARY KEY,
     property_id TEXT NOT NULL,
     user_id TEXT,

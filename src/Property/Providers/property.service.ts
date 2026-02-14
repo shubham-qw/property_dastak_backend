@@ -11,6 +11,7 @@ import {
   Ownership,
   ParkingType
 } from '../dto/property.dto';
+import { SavePropertiesDto } from '../dto/SaveProperty.dto';
 
 @Injectable()
 export class PropertyService {
@@ -150,10 +151,17 @@ export class PropertyService {
         (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
            FROM property_images pi WHERE pi.property_id = p.id) AS images,
         (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
-           FROM property_videos pv WHERE pv.property_id = p.id) AS videos
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos,
+           CASE 
+        WHEN sp.user_id IS NOT NULL THEN true
+        ELSE false
+    END AS "isSaved"
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
+      LEFT JOIN pd_saved_properties sp
+      ON sp.propertyid = p.id
+      AND sp.user_id = $1
       WHERE p.created_by = $1
       ORDER BY p.created_at DESC
     `;
@@ -654,4 +662,61 @@ export class PropertyService {
       client.release();
     }
   }
+
+   async saveProperties(userId: number, propertyId: number): Promise<void> {
+
+        const dbValues = [
+            userId,
+            propertyId
+        ];
+
+        // check if property already saved;
+        const fetchQuery = `SELECT * from pd_save_properties WHERE userid = $1 and propertyid = $2;`
+
+        const checkResponse = await dbInstance.query(fetchQuery,dbValues);
+
+        if (checkResponse.rowCount) {
+          throw new Error(`Property already saved by the user.`);
+        }
+
+
+        const insertQuery: string = `INSERT INTO pd_save_properties (
+    userid,
+    propertyid
+    ) VALUES ($1,$2) RETURNING *;`
+
+        const response = await dbInstance.query(insertQuery, dbValues);
+
+        if (!response.rowCount) {
+            throw new Error(`Unable to save the property.`);
+        }
+
+    }
+
+    async getSavedProperties(userId: number): Promise<SavePropertiesDto[]> {
+
+        const saveProperties : SavePropertiesDto[] = [];
+
+        const fetchQuery : string = `SELECT * from pd_save_properties where userid = $1;`;
+
+        const fetchValues = [
+            userId
+        ]
+
+        const response = await dbInstance.query(fetchQuery,fetchValues);
+
+        const rows = response.rows;
+
+        rows.forEach((row : any) => {
+
+            const saveProperty : SavePropertiesDto = {
+                userId : row.userid,
+                propertyId : row.propertyid
+            }
+
+            saveProperties.push(saveProperty)
+        })
+
+        return saveProperties;
+    }
 }
