@@ -7,9 +7,10 @@ import { UserModule } from './User/user.module';
 import { PropertyModule } from './Property/property.module';
 import { LeadsModule } from './Leads/leads.module';
 import { MediaModule } from './media/media.module';
+import { ReelsModule } from './Reels/reels.module';
 
 @Module({
-  imports: [UserModule, PropertyModule, LeadsModule,MediaModule],
+  imports: [UserModule, PropertyModule, LeadsModule, MediaModule, ReelsModule],
   controllers: [AppController],
   providers: [
     AppService,

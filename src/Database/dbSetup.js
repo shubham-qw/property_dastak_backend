@@ -2,15 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./dbConn/nodeDB.js');
 
-// Database configuration
-// const dbConfig = {
-//     hostname: databaseConfig.hostname || 'localhost',
-//     password: databaseConfig.password || 'jet123ABC',
-//     database: databaseConfig.database || 'test1',
-//     port: parseInt(databaseConfig.port || '5432'),
-//     username: databaseConfig.username || 'postgres'
-// };
-
 // Function to read SQL files from schema directory
 function readSQLFiles(schemaDir) {
     const sqlFiles = [];
