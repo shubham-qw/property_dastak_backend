@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS properties (
     property_age INT, -- in years
     ownership VARCHAR(30) CHECK (ownership IN ('freehold', 'leasehold', 'co-operative', 'power_of_attorney')),
     price_per_sqft DECIMAL(10,2),
+    price_interval VARCHAR(20) CHECK (price_interval IN ('MONTHLY', 'TOTAL')),
     brokerage_charge DECIMAL(10,2),
     property_size JSONB default null,
     description TEXT,

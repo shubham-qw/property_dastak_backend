@@ -19,6 +19,11 @@ export enum Ownership {
   POWER_OF_ATTORNEY = 'power_of_attorney'
 }
 
+export enum PriceInterval {
+  MONTHLY = 'MONTHLY',
+  TOTAL = 'TOTAL'
+}
+
 export enum ParkingType {
   COVERED = 'covered',
   OPEN = 'open'
@@ -124,6 +129,10 @@ export class CreatePropertyDto {
   price_per_sqft?: number;
 
   @IsOptional()
+  @IsEnum(PriceInterval)
+  price_interval?: PriceInterval;
+
+  @IsOptional()
   @IsString()
 //  @IsDecimal({ decimal_digits: '1,2', force_decimal: true })
   brokerage_charge?: number;
@@ -213,6 +222,10 @@ export class UpdatePropertyDto {
   price_per_sqft?: number;
 
   @IsOptional()
+  @IsEnum(PriceInterval)
+  price_interval?: PriceInterval;
+
+  @IsOptional()
   @Type(() => Number)
   @IsDecimal()
   brokerage_charge?: number;
@@ -278,6 +291,7 @@ export class PropertyResponseDto {
   property_age?: number;
   ownership?: Ownership;
   price_per_sqft?: number;
+  price_interval?: PriceInterval;
   brokerage_charge?: number;
   price?: number;
   description?: string;

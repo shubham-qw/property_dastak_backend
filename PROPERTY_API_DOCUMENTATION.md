@@ -1,50 +1,72 @@
-# Property CRUD API Documentation
-
-## Overview
-The Property API provides comprehensive CRUD operations for managing properties, including related property details and parking information. All endpoints require JWT authentication.
+# Property API Documentation
 
 ## Base URL
-```
-http://localhost:3000/properties
-```
+
+- **HTTP API**: `http://localhost:8080`
+- **Uploads (static)**: `http://localhost:8080/uploads/<filename>`
 
 ## Authentication
-All endpoints require a valid JWT token in the Authorization header:
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-```
 
-## API Endpoints
+All property endpoints are protected by **JWT**.
 
-### 1. Create Property
-**POST** `/properties`
+- **Header**: `Authorization: Bearer <access_token>`
 
-Creates a new property with optional property details and parking information.
+If the token is missing/invalid/expired, you will receive **401 Unauthorized**.
 
-**Request Body:**
+## Common Types
+
+### Enums
+
+- **property_for**: `sell` | `lease/rent` | `pg/hotel`
+- **availability_status**: `ready_to_move` | `under_construction`
+- **ownership**: `freehold` | `leasehold` | `co-operative` | `power_of_attorney`
+- **price_interval**: `MONTHLY` | `TOTAL`
+- **parking_type**: `covered` | `open`
+
+### Notes
+
+- **price_per_sqft**: numeric (stored as `DECIMAL(10,2)`).
+- **price_interval**: indicates whether the entered price amount should be treated as **MONTHLY** or **TOTAL**.
+- **property_features / property_amenities**: arrays of strings.
+- **property_size**: JSON object (arbitrary shape).
+
+## Endpoints
+
+### Create Property
+
+`POST /properties`
+
+- **Auth**: Required
+- **Content-Type**: `application/json`
+
+#### Request body (CreatePropertyDto)
+
 ```json
 {
-  "title": "Beautiful 3BHK Apartment",
-  "property_for": "sell",
+  "title": "2BHK in Central Park",
+  "property_for": "lease/rent",
   "property_type": "apartment",
-  "city": "Mumbai",
-  "locality": "Andheri West",
-  "sub_locality": "Lokhandwala",
-  "apartment": "Sunshine Towers",
+  "city": "Indore",
+  "locality": "Vijay Nagar",
+  "sub_locality": "Scheme 54",
+  "apartment": "Central Park",
   "availability_status": "ready_to_move",
-  "property_age": 2,
+  "property_age": 3,
   "ownership": "freehold",
-  "price_per_sqft": 15000.50,
-  "brokerage_charge": 50000.00,
-  "description": "Beautiful apartment with modern amenities",
-  "property_features": ["Balcony", "Garden View", "Modern Kitchen"],
-  "property_amenities": ["Swimming Pool", "Gym", "Security"],
+  "price_per_sqft": 2500,
+  "price_interval": "MONTHLY",
+  "brokerage_charge": 5000,
+  "price": 25000,
+  "property_size": { "unit": "sqft", "value": 1200 },
+  "description": "Well ventilated, near main road",
+  "property_features": ["corner", "park_facing"],
+  "property_amenities": ["lift", "gym"],
   "property_details": {
-    "rooms": 3,
+    "rooms": 2,
     "bathrooms": 2,
     "balconies": 1,
-    "other_rooms": "Study room",
-    "floors": 15
+    "other_rooms": "store",
+    "floors": 5
   },
   "parking": {
     "parking_count": 1,
@@ -53,380 +75,238 @@ Creates a new property with optional property details and parking information.
 }
 ```
 
-**Response (201 Created):**
+#### Success response (201)
+
 ```json
 {
-  "id": 1,
-  "title": "Beautiful 3BHK Apartment",
-  "property_for": "sell",
+  "id": 123,
+  "title": "2BHK in Central Park",
+  "property_for": "lease/rent",
   "property_type": "apartment",
-  "city": "Mumbai",
-  "locality": "Andheri West",
-  "sub_locality": "Lokhandwala",
-  "apartment": "Sunshine Towers",
+  "city": "Indore",
+  "locality": "Vijay Nagar",
+  "sub_locality": "Scheme 54",
+  "apartment": "Central Park",
   "availability_status": "ready_to_move",
-  "property_age": 2,
+  "property_age": 3,
   "ownership": "freehold",
-  "price_per_sqft": 15000.50,
-  "brokerage_charge": 50000.00,
-  "description": "Beautiful apartment with modern amenities",
-  "property_features": ["Balcony", "Garden View", "Modern Kitchen"],
-  "property_amenities": ["Swimming Pool", "Gym", "Security"],
-  "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T10:30:00.000Z",
+  "price_per_sqft": "2500.00",
+  "price_interval": "MONTHLY",
+  "brokerage_charge": "5000.00",
+  "price": "25000.00",
+  "description": "Well ventilated, near main road",
+  "property_features": ["corner", "park_facing"],
+  "property_amenities": ["lift", "gym"],
+  "created_at": "2026-03-03T12:00:00.000Z",
+  "updated_at": "2026-03-03T12:00:00.000Z",
   "property_details": {
-    "property_id": 1,
-    "rooms": 3,
+    "property_id": 123,
+    "rooms": 2,
     "bathrooms": 2,
     "balconies": 1,
-    "other_rooms": "Study room",
-    "floors": 15
+    "other_rooms": "store",
+    "floors": 5
   },
   "parking": {
-    "property_id": 1,
+    "property_id": 123,
     "parking_count": 1,
     "parking_type": "covered"
   }
 }
 ```
 
-### 2. Get All Properties
-**GET** `/properties`
+#### Error responses
 
-Retrieves all properties with their details and parking information.
+- **400 Bad Request**: validation error / DB error
+- **401 Unauthorized**: missing/invalid JWT
 
-**Response (200 OK):**
+---
+
+### Upload Property Media (Images + Video)
+
+`POST /properties/:id/media`
+
+- **Auth**: Required
+- **Content-Type**: `multipart/form-data`
+- **Uploads directory**: `./uploads` (served via `/uploads/`)
+
+#### Form-data fields
+
+- **images**: up to 10 files (optional)
+- **video**: up to 1 file (optional)
+
+#### Success response (201)
+
+```json
+{
+  "uploaded": 2,
+  "items": [
+    { "media_type": "image", "url": "/uploads/1750000000000-123456789.png" },
+    { "media_type": "video", "url": "/uploads/1750000000000-987654321.mp4" }
+  ]
+}
+```
+
+---
+
+### Get All Properties (for current user)
+
+`GET /properties`
+
+- **Auth**: Required
+
+#### Success response (200)
+
+Returns an array of `PropertyResponseDto`. Each item may include:
+
+- `images`: string[]
+- `videos`: string[]
+- `property_details`: object (optional)
+- `parking`: object (optional)
+
+---
+
+### Get Most Clicked Properties
+
+`GET /properties/most-clicked?limit=1`
+
+- **Auth**: Required
+- **Query params**:
+  - `limit` (optional, default `1`, min `1`)
+
+#### Success response (200)
+
+If `limit=1`, returns a **single object** (or a `{ "message": "No property found" }` object if none).
+If `limit>1`, returns an array.
+
+Example (limit=1):
+
+```json
+{
+  "id": 123,
+  "name": "2BHK in Central Park",
+  "price": "25000.00",
+  "image": "/uploads/1750000000000-123456789.png",
+  "location": null,
+  "description": "Well ventilated, near main road",
+  "_clicks": 10
+}
+```
+
+---
+
+### Get Property By ID
+
+`GET /properties/:id`
+
+- **Auth**: Required
+
+#### Success response (200)
+
+Returns a `PropertyResponseDto`.
+
+#### Error responses
+
+- **404 Not Found**: property not found
+
+---
+
+### Update Property
+
+`PUT /properties/:id`
+
+- **Auth**: Required
+- **Content-Type**: `application/json`
+- Send only fields you want to update.
+
+#### Example request body
+
+```json
+{
+  "price_per_sqft": 2800,
+  "price_interval": "TOTAL",
+  "price": 7200000,
+  "description": "Updated description"
+}
+```
+
+#### Success response (200)
+
+Returns updated `PropertyResponseDto`.
+
+---
+
+### Delete Property
+
+`DELETE /properties/:id`
+
+- **Auth**: Required
+
+#### Success response (204)
+
+No content.
+
+---
+
+### Search Properties by City
+
+`GET /properties/search/city/:city`
+
+- **Auth**: Required
+
+#### Success response (200)
+
+Array of `PropertyResponseDto`.
+
+---
+
+### Search Properties by Type
+
+`GET /properties/search/type/:type`
+
+- **Auth**: Required
+
+#### Success response (200)
+
+Array of `PropertyResponseDto`.
+
+---
+
+### Save a Property (bookmark)
+
+`POST /properties/user/save`
+
+- **Auth**: Required
+- **Content-Type**: `application/json`
+
+#### Request body
+
+```json
+{ "propertyId": 123 }
+```
+
+#### Success response (201)
+
+No body.
+
+#### Error responses
+
+- **400 Bad Request**: property already saved / other failure
+
+---
+
+### Get Saved Properties (bookmarks)
+
+`GET /properties/user/save`
+
+- **Auth**: Required
+
+#### Success response (200)
+
 ```json
 [
-  {
-    "id": 1,
-    "title": "Beautiful 3BHK Apartment",
-    "property_for": "sell",
-    "property_type": "apartment",
-    "city": "Mumbai",
-    "locality": "Andheri West",
-    "sub_locality": "Lokhandwala",
-    "apartment": "Sunshine Towers",
-    "availability_status": "ready_to_move",
-    "property_age": 2,
-    "ownership": "freehold",
-    "price_per_sqft": 15000.50,
-    "brokerage_charge": 50000.00,
-    "description": "Beautiful apartment with modern amenities",
-    "property_features": ["Balcony", "Garden View", "Modern Kitchen"],
-    "property_amenities": ["Swimming Pool", "Gym", "Security"],
-    "created_at": "2024-01-15T10:30:00.000Z",
-    "updated_at": "2024-01-15T10:30:00.000Z",
-    "property_details": {
-      "property_id": 1,
-      "rooms": 3,
-      "bathrooms": 2,
-      "balconies": 1,
-      "other_rooms": "Study room",
-      "floors": 15
-    },
-    "parking": {
-      "property_id": 1,
-      "parking_count": 1,
-      "parking_type": "covered"
-    }
-  }
+  { "userId": 10, "propertyId": 123 },
+  { "userId": 10, "propertyId": 456 }
 ]
 ```
-
-### 3. Get Property by ID
-**GET** `/properties/:id`
-
-Retrieves a specific property by its ID.
-
-**Response (200 OK):**
-```json
-{
-  "id": 1,
-  "title": "Beautiful 3BHK Apartment",
-  "property_for": "sell",
-  "property_type": "apartment",
-  "city": "Mumbai",
-  "locality": "Andheri West",
-  "sub_locality": "Lokhandwala",
-  "apartment": "Sunshine Towers",
-  "availability_status": "ready_to_move",
-  "property_age": 2,
-  "ownership": "freehold",
-  "price_per_sqft": 15000.50,
-  "brokerage_charge": 50000.00,
-  "description": "Beautiful apartment with modern amenities",
-  "property_features": ["Balcony", "Garden View", "Modern Kitchen"],
-  "property_amenities": ["Swimming Pool", "Gym", "Security"],
-  "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T10:30:00.000Z",
-  "property_details": {
-    "property_id": 1,
-    "rooms": 3,
-    "bathrooms": 2,
-    "balconies": 1,
-    "other_rooms": "Study room",
-    "floors": 15
-  },
-  "parking": {
-    "property_id": 1,
-    "parking_count": 1,
-    "parking_type": "covered"
-  }
-}
-```
-
-**Error Response (404 Not Found):**
-```json
-{
-  "statusCode": 404,
-  "message": "Property not found",
-  "error": "Not Found"
-}
-```
-
-### 4. Update Property
-**PUT** `/properties/:id`
-
-Updates an existing property. Only provided fields will be updated.
-
-**Request Body:**
-```json
-{
-  "title": "Updated Beautiful 3BHK Apartment",
-  "price_per_sqft": 16000.00,
-  "property_details": {
-    "rooms": 4,
-    "bathrooms": 3
-  },
-  "parking": {
-    "parking_count": 2,
-    "parking_type": "covered"
-  }
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "id": 1,
-  "title": "Updated Beautiful 3BHK Apartment",
-  "property_for": "sell",
-  "property_type": "apartment",
-  "city": "Mumbai",
-  "locality": "Andheri West",
-  "sub_locality": "Lokhandwala",
-  "apartment": "Sunshine Towers",
-  "availability_status": "ready_to_move",
-  "property_age": 2,
-  "ownership": "freehold",
-  "price_per_sqft": 16000.00,
-  "brokerage_charge": 50000.00,
-  "description": "Beautiful apartment with modern amenities",
-  "property_features": ["Balcony", "Garden View", "Modern Kitchen"],
-  "property_amenities": ["Swimming Pool", "Gym", "Security"],
-  "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T11:00:00.000Z",
-  "property_details": {
-    "property_id": 1,
-    "rooms": 4,
-    "bathrooms": 3,
-    "balconies": 1,
-    "other_rooms": "Study room",
-    "floors": 15
-  },
-  "parking": {
-    "property_id": 1,
-    "parking_count": 2,
-    "parking_type": "covered"
-  }
-}
-```
-
-### 5. Delete Property
-**DELETE** `/properties/:id`
-
-Deletes a property and all its related data (property details and parking).
-
-**Response (204 No Content):**
-No response body
-
-### 6. Search Properties by City
-**GET** `/properties/search/city/:city`
-
-Retrieves all properties in a specific city.
-
-**Response (200 OK):**
-```json
-[
-  {
-    "id": 1,
-    "title": "Beautiful 3BHK Apartment",
-    "property_for": "sell",
-    "property_type": "apartment",
-    "city": "Mumbai",
-    "locality": "Andheri West",
-    // ... other fields
-  }
-]
-```
-
-### 7. Search Properties by Type
-**GET** `/properties/search/type/:type`
-
-Retrieves all properties of a specific type.
-
-**Response (200 OK):**
-```json
-[
-  {
-    "id": 1,
-    "title": "Beautiful 3BHK Apartment",
-    "property_for": "sell",
-    "property_type": "apartment",
-    "city": "Mumbai",
-    "locality": "Andheri West",
-    // ... other fields
-  }
-]
-```
-
-## Data Types and Enums
-
-### PropertyFor
-- `sell` - Property for sale
-- `lease/rent` - Property for lease/rent
-- `pg/hotel` - PG/Hotel accommodation
-
-### AvailabilityStatus
-- `ready_to_move` - Ready to move in
-- `under_construction` - Under construction
-
-### Ownership
-- `freehold` - Freehold property
-- `leasehold` - Leasehold property
-- `co-operative` - Co-operative society
-- `power_of_attorney` - Power of attorney
-
-### ParkingType
-- `covered` - Covered parking
-- `open` - Open parking
-
-## Validation Rules
-
-### Property Fields
-- `title`: Optional, max 255 characters
-- `property_for`: Required, must be one of the PropertyFor enum values
-- `property_type`: Required, max 20 characters
-- `city`: Required, max 100 characters
-- `locality`: Required, max 100 characters
-- `sub_locality`: Optional, max 100 characters
-- `apartment`: Optional, max 100 characters
-- `availability_status`: Required, must be one of the AvailabilityStatus enum values
-- `property_age`: Optional, must be non-negative integer
-- `ownership`: Optional, must be one of the Ownership enum values
-- `price_per_sqft`: Optional, decimal number
-- `brokerage_charge`: Optional, decimal number
-- `description`: Optional, text
-- `property_features`: Optional, array of strings
-- `property_amenities`: Optional, array of strings
-
-### Property Details Fields
-- `rooms`: Optional, non-negative integer
-- `bathrooms`: Optional, non-negative integer
-- `balconies`: Optional, non-negative integer
-- `other_rooms`: Optional, max 500 characters
-- `floors`: Optional, non-negative integer
-
-### Parking Fields
-- `parking_count`: Optional, non-negative integer
-- `parking_type`: Optional, must be one of the ParkingType enum values
-
-## Error Responses
-
-### 400 Bad Request
-```json
-{
-  "statusCode": 400,
-  "message": ["property_for should not be empty"],
-  "error": "Bad Request"
-}
-```
-
-### 401 Unauthorized
-```json
-{
-  "statusCode": 401,
-  "message": "No authorization header",
-  "error": "Unauthorized"
-}
-```
-
-### 404 Not Found
-```json
-{
-  "statusCode": 404,
-  "message": "Property not found",
-  "error": "Not Found"
-}
-```
-
-## Usage Examples
-
-### Create a Property
-```bash
-curl -X POST http://localhost:3000/properties \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Modern 2BHK Flat",
-    "property_for": "lease/rent",
-    "property_type": "apartment",
-    "city": "Delhi",
-    "locality": "Dwarka",
-    "availability_status": "ready_to_move",
-    "property_details": {
-      "rooms": 2,
-      "bathrooms": 2,
-      "balconies": 1
-    },
-    "parking": {
-      "parking_count": 1,
-      "parking_type": "open"
-    }
-  }'
-```
-
-### Get All Properties
-```bash
-curl -X GET http://localhost:3000/properties \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-### Update a Property
-```bash
-curl -X PUT http://localhost:3000/properties/1 \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "price_per_sqft": 18000.00,
-    "description": "Updated description"
-  }'
-```
-
-### Search by City
-```bash
-curl -X GET http://localhost:3000/properties/search/city/Mumbai \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-## Database Schema
-
-The API uses three main tables:
-
-1. **properties** - Main property information
-2. **property_details** - Detailed property specifications (linked by property_id)
-3. **parking** - Parking information (linked by property_id)
-
-All operations maintain referential integrity and use database transactions for data consistency.
 

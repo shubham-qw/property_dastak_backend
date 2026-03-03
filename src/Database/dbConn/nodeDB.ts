@@ -4,11 +4,11 @@ import Config from '../../config';
 const {databaseConfig} = Config;
 // Database configuration with proper environment variable handling
 const config: dbConfig = {
-    hostname: databaseConfig.hostname || 'localhost',
-    password: databaseConfig.password || 'jet123ABC',
-    database: databaseConfig.database || 'test1',
-    port: parseInt(databaseConfig.port || '5432'),
-    username: databaseConfig.username || 'postgres'
+    hostname: databaseConfig.hostname || '',
+    password: databaseConfig.password || '',
+    database: databaseConfig.database || '',
+    port: parseInt(databaseConfig.port || ''),
+    username: databaseConfig.username || ''
 };
 
 // Create database instance
