@@ -170,6 +170,34 @@ Returns an array of `PropertyResponseDto`. Each item may include:
 
 ---
 
+### Home Screen Lists (Top by views)
+
+`GET /properties/home`
+
+- **Auth**: Required (JWT) *(same guard as other property endpoints)*
+
+Returns the top 5 properties for each category, ordered by **most viewed** (from `properties_seen_time`), and automatically “fills” with normal/latest properties in that category when view counts are not available.
+
+#### Categories returned
+
+- `rent`: `property_for = "lease/rent"`
+- `buy`: `property_for = "sell"`
+- `pg`: `property_for = "pg/hotel"`
+- `commercial`: `property_type = "commercial"` (case-insensitive)
+
+#### Success response (200)
+
+```json
+{
+  "rent": [ /* PropertyResponseDto[] */ ],
+  "buy": [ /* PropertyResponseDto[] */ ],
+  "commercial": [ /* PropertyResponseDto[] */ ],
+  "pg": [ /* PropertyResponseDto[] */ ]
+}
+```
+
+---
+
 ### Get Most Clicked Properties
 
 `GET /properties/most-clicked?limit=1`

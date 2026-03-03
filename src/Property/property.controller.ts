@@ -73,6 +73,12 @@ export class PropertyController {
     return this.propertyService.getAllProperties(userId);
   }
 
+  @Get('home')
+  @HttpCode(HttpStatus.OK)
+  async homeScreen() {
+    return this.propertyService.getHomeScreenProperties();
+  }
+
   @Get('/most-clicked')
   async mostClicked(@Query('limit') limitStr?: string) {
     const limit = limitStr ? Math.max(1, parseInt(limitStr, 10) || 1) : 1;

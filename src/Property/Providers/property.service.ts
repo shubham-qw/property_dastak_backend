@@ -15,6 +15,108 @@ import { SavePropertiesDto } from '../dto/SaveProperty.dto';
 
 @Injectable()
 export class PropertyService {
+  private mapRowToPropertyResponse(row: any): PropertyResponseDto {
+    return {
+      id: row.id,
+      title: row.title,
+      property_for: row.property_for as PropertyFor,
+      property_type: row.property_type,
+      city: row.city,
+      locality: row.locality,
+      sub_locality: row.sub_locality,
+      apartment: row.apartment,
+      availability_status: row.availability_status as AvailabilityStatus,
+      property_age: row.property_age,
+      ownership: row.ownership as Ownership,
+      price_per_sqft: row.price_per_sqft,
+      price_interval: row.price_interval,
+      brokerage_charge: row.brokerage_charge,
+      price: row.price,
+      description: row.description,
+      property_features: row.property_features,
+      property_amenities: row.property_amenities,
+      property_size: row.property_size,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      images: row.images || [],
+      videos: row.videos || [],
+      property_details:
+        row.rooms || row.bathrooms || row.balconies || row.other_rooms || row.floors
+          ? {
+              property_id: row.id,
+              rooms: row.rooms,
+              bathrooms: row.bathrooms,
+              balconies: row.balconies,
+              other_rooms: row.other_rooms,
+              floors: row.floors,
+            }
+          : undefined,
+      parking:
+        row.parking_count || row.parking_type
+          ? {
+              property_id: row.id,
+              parking_count: row.parking_count,
+              parking_type: row.parking_type as ParkingType,
+            }
+          : undefined,
+    };
+  }
+
+  private async fetchTopPropertiesByFilter(filter: { propertyFor?: string; propertyType?: string }, limit = 5) {
+    const where: string[] = [];
+    const params: any[] = [];
+    let i = 1;
+
+    if (filter.propertyFor) {
+      where.push(`p.property_for = $${i++}`);
+      params.push(filter.propertyFor);
+    }
+    if (filter.propertyType) {
+      where.push(`LOWER(p.property_type) = LOWER($${i++})`);
+      params.push(filter.propertyType);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const sql = `
+      WITH views AS (
+        SELECT property_id::bigint AS property_id, COUNT(*)::int AS views
+        FROM properties_seen_time
+        GROUP BY property_id
+      )
+      SELECT
+        p.*,
+        pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos,
+        COALESCE(v.views, 0) AS views
+      FROM properties p
+      LEFT JOIN views v ON v.property_id = p.id
+      LEFT JOIN property_details pd ON p.id = pd.property_id
+      LEFT JOIN parking pk ON p.id = pk.property_id
+      ${whereSql}
+      ORDER BY COALESCE(v.views, 0) DESC, p.created_at DESC
+      LIMIT ${Number(limit) || 5}
+    `;
+
+    const result = await dbInstance.query(sql, params);
+    return result.rows.map((row) => this.mapRowToPropertyResponse(row));
+  }
+
+  async getHomeScreenProperties() {
+    const [rent, buy, commercial, pg] = await Promise.all([
+      this.fetchTopPropertiesByFilter({ propertyFor: 'lease/rent' }, 5),
+      this.fetchTopPropertiesByFilter({ propertyFor: 'sell' }, 5),
+      this.fetchTopPropertiesByFilter({ propertyType: 'commercial' }, 5),
+      this.fetchTopPropertiesByFilter({ propertyFor: 'pg/hotel' }, 5),
+    ]);
+
+    return { rent, buy, commercial, pg };
+  }
+
   async createProperty(createPropertyDto: CreatePropertyDto, userId: string): Promise<PropertyResponseDto> {
     const client = await dbInstance.connection();
     
@@ -161,9 +263,9 @@ export class PropertyService {
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
-      LEFT JOIN pd_saved_properties sp
+      LEFT JOIN pd_save_properties sp
       ON sp.propertyid = p.id
-      AND sp.user_id = $1
+      AND sp.userid = $1
       WHERE p.created_by = $1
       ORDER BY p.created_at DESC
     `;
