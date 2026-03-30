@@ -11,9 +11,10 @@ CREATE TABLE IF NOT EXISTS properties (
     property_age INT, -- in years
     ownership VARCHAR(30) CHECK (ownership IN ('freehold', 'leasehold', 'co-operative', 'power_of_attorney')),
     price_per_sqft DECIMAL(10,2),
-    price_interval VARCHAR(20) CHECK (price_interval IN ('MONTHLY', 'TOTAL')),
     brokerage_charge DECIMAL(10,2),
     property_size JSONB default null,
+    property_latitude double precision default null,
+    property_longitude double precision default null,
     description TEXT,
     property_features VARCHAR(256)[] default null,
     property_amenities VARCHAR(256)[] default null,
@@ -23,4 +24,11 @@ CREATE TABLE IF NOT EXISTS properties (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-ALTER TABLE properties ADD COLUMN price DECIMAL(10,2) default null;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) default null;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS price_interval VARCHAR(20) CHECK (price_interval IN ('MONTHLY', 'TOTAL'));
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_latitude double precision default null;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_longitude double precision default null;
+
+CREATE EXTENSION IF NOT EXISTS postgis;
+ALTER TABLE properties
+ADD COLUMN IF NOT EXISTS property_location GEOGRAPHY(Point, 4326);

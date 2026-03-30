@@ -111,6 +111,16 @@ export class CreatePropertyDto {
   @IsObject()
   property_size?: object;
 
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  property_latitude?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  property_longitude?: number;
+
   @IsEnum(AvailabilityStatus)
   availability_status: AvailabilityStatus;
 
@@ -204,6 +214,16 @@ export class UpdatePropertyDto {
   apartment?: string;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  property_latitude?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  property_longitude?: number;
+
+  @IsOptional()
   @IsEnum(AvailabilityStatus)
   availability_status?: AvailabilityStatus;
 
@@ -287,6 +307,8 @@ export class PropertyResponseDto {
   locality: string;
   sub_locality?: string;
   apartment?: string;
+  property_latitude?: number;
+  property_longitude?: number;
   availability_status: AvailabilityStatus;
   property_age?: number;
   ownership?: Ownership;

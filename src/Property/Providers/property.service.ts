@@ -25,6 +25,8 @@ export class PropertyService {
       locality: row.locality,
       sub_locality: row.sub_locality,
       apartment: row.apartment,
+      property_latitude: row.property_latitude,
+      property_longitude: row.property_longitude,
       availability_status: row.availability_status as AvailabilityStatus,
       property_age: row.property_age,
       ownership: row.ownership as Ownership,
@@ -130,9 +132,18 @@ export class PropertyService {
       const propertyQuery = `
         INSERT INTO properties (
           title, property_for, property_type, city, locality, sub_locality, 
-          apartment, availability_status, property_age, ownership, 
+          apartment, property_latitude, property_longitude, property_location, availability_status, property_age, ownership, 
           price_per_sqft, price_interval, brokerage_charge, description, property_features, property_amenities, price, property_size, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9,
+          CASE
+            WHEN $8::double precision IS NOT NULL AND $9::double precision IS NOT NULL
+              THEN ST_SetSRID(ST_MakePoint($9::double precision, $8::double precision), 4326)::geography
+            ELSE NULL
+          END,
+          $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+        )
         RETURNING *
       `;
 
@@ -144,6 +155,8 @@ export class PropertyService {
         propertyData.locality,
         propertyData.sub_locality,
         propertyData.apartment,
+        propertyData.property_latitude,
+        propertyData.property_longitude,
         propertyData.availability_status,
         propertyData.property_age,
         propertyData.ownership,
@@ -155,7 +168,7 @@ export class PropertyService {
         propertyData.property_amenities,
         propertyData.price,
         propertyData.property_size,
-        userId
+        userId,
       ];
 
       const propertyResult = await client.query(propertyQuery, propertyValues);
@@ -222,6 +235,8 @@ export class PropertyService {
         locality: newProperty.locality,
         sub_locality: newProperty.sub_locality,
         apartment: newProperty.apartment,
+        property_latitude: newProperty.property_latitude,
+        property_longitude: newProperty.property_longitude,
         availability_status: newProperty.availability_status as AvailabilityStatus,
         property_age: newProperty.property_age,
         ownership: newProperty.ownership as Ownership,
@@ -281,6 +296,8 @@ export class PropertyService {
       locality: row.locality,
       sub_locality: row.sub_locality,
       apartment: row.apartment,
+      property_latitude: row.property_latitude,
+      property_longitude: row.property_longitude,
       availability_status: row.availability_status as AvailabilityStatus,
       property_age: row.property_age,
       ownership: row.ownership as Ownership,
@@ -383,6 +400,8 @@ export class PropertyService {
       locality: row.locality,
       sub_locality: row.sub_locality,
       apartment: row.apartment,
+      property_latitude: row.property_latitude,
+      property_longitude: row.property_longitude,
       availability_status: row.availability_status as AvailabilityStatus,
       property_age: row.property_age,
       ownership: row.ownership as Ownership,
@@ -447,6 +466,8 @@ export class PropertyService {
       locality: row.locality,
       sub_locality: row.sub_locality,
       apartment: row.apartment,
+      property_latitude: row.property_latitude,
+      property_longitude: row.property_longitude,
       availability_status: row.availability_status as AvailabilityStatus,
       property_age: row.property_age,
       ownership: row.ownership as Ownership,
@@ -501,6 +522,26 @@ export class PropertyService {
           propertyValues.push(value);
           paramCount++;
         }
+      }
+
+      if (
+        propertyData.property_latitude !== undefined ||
+        propertyData.property_longitude !== undefined
+      ) {
+        const lat =
+          propertyData.property_latitude ?? (existingProperty as any).property_latitude ?? null;
+        const lng =
+          propertyData.property_longitude ?? (existingProperty as any).property_longitude ?? null;
+
+        propertyUpdates.push(
+          `property_location = CASE
+            WHEN $${paramCount} IS NOT NULL AND $${paramCount + 1} IS NOT NULL
+              THEN ST_SetSRID(ST_MakePoint($${paramCount + 1}, $${paramCount}), 4326)::geography
+            ELSE NULL
+          END`
+        );
+        propertyValues.push(lat, lng);
+        paramCount += 2;
       }
 
       if (propertyUpdates.length > 0) {
@@ -583,6 +624,8 @@ export class PropertyService {
           locality: updatedProperty.locality,
           sub_locality: updatedProperty.sub_locality,
           apartment: updatedProperty.apartment,
+          property_latitude: updatedProperty.property_latitude,
+          property_longitude: updatedProperty.property_longitude,
           availability_status: updatedProperty.availability_status as AvailabilityStatus,
           property_age: updatedProperty.property_age,
           ownership: updatedProperty.ownership as Ownership,
@@ -648,6 +691,8 @@ export class PropertyService {
       locality: row.locality,
       sub_locality: row.sub_locality,
       apartment: row.apartment,
+      property_latitude: row.property_latitude,
+      property_longitude: row.property_longitude,
       availability_status: row.availability_status as AvailabilityStatus,
       property_age: row.property_age,
       ownership: row.ownership as Ownership,
@@ -706,6 +751,8 @@ export class PropertyService {
       locality: row.locality,
       sub_locality: row.sub_locality,
       apartment: row.apartment,
+      property_latitude: row.property_latitude,
+      property_longitude: row.property_longitude,
       availability_status: row.availability_status as AvailabilityStatus,
       property_age: row.property_age,
       ownership: row.ownership as Ownership,
