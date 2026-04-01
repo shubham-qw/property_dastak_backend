@@ -605,6 +605,14 @@ High level body (fields depend on `CreateUserDto`):
 ```json
 { "phone_number": "+919999999999", "otp": "000000" }
 ```
+reponse {
+    "is_new_user": true,
+    "message": "OTP verified. Complete signup to continue",
+    "phone_number": "+919999999999",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjAsInVzZXJfdXVpZCI6Im90cF9zaWdudXAiLCJwaG9uZV9udW1iZXIiOiIrOTE5OTk5OTk5OTk5IiwicHVycG9zZSI6InNpZ251cCIsIm90cF92ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNzc1MDUyNDQzLCJleHAiOjE3NzUxMzg4NDN9.oReWqzGZr3AP2vwQhy-ycZVRRa5Y47E_8dfg8tB8NC8",
+    "token_type": "Bearer",
+    "expires_in": 86400
+}
 ## send otp
 `POST /users/send-otp`
 
