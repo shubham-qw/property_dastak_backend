@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsEnum, IsOptional, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsEmail, IsString, IsEnum, MinLength, MaxLength, Matches } from 'class-validator';
 
 export enum UserClass {
   BUYER = 'buyer',
@@ -26,14 +26,6 @@ export class CreateUserDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 
-  @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters long' })
-  @MaxLength(100)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-  })
-  password: string;
-
   @IsEnum(UserClass, { message: 'Class must be one of: buyer, seller, user' })
   class: UserClass;
 }
@@ -50,12 +42,24 @@ export class UserResponseDto {
   updated_at: Date;
 }
 
-export class LoginUserDto {
-  @IsEmail({}, { message: 'Please provide a valid email address' })
-  email: string;
+export class SendOtpDto {
+  @IsString()
+  @Matches(/^\+?[1-9]\d{1,14}$/, {
+    message: 'Phone number must be a valid international format',
+  })
+  phone_number: string;
+}
+
+export class VerifyOtpDto {
+  @IsString()
+  @Matches(/^\+?[1-9]\d{1,14}$/, {
+    message: 'Phone number must be a valid international format',
+  })
+  phone_number: string;
 
   @IsString()
-  password: string;
+  @Matches(/^\d{6}$/, { message: 'OTP must be a 6-digit number' })
+  otp: string;
 }
 
 // JWT Response DTOs
@@ -72,5 +76,19 @@ export class SignupResponseDto {
   token_type: string;
   expires_in: number;
   message: string;
+}
+
+export class OtpStatusResponseDto {
+  message: string;
+}
+
+export class VerifyOtpResponseDto {
+  is_new_user: boolean;
+  message: string;
+  user?: UserResponseDto;
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  phone_number?: string;
 }
 

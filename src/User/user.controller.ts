@@ -13,7 +13,7 @@ import {
   UseGuards
 } from '@nestjs/common';
 import { PortalUserService } from './Providers/portalUser.service';
-import { CreateUserDto, UserResponseDto, LoginUserDto, AuthResponseDto, SignupResponseDto } from './dto/user.dto';
+import { CreateUserDto, UserResponseDto, VerifyOtpDto, AuthResponseDto, SignupResponseDto, SendOtpDto, OtpStatusResponseDto, VerifyOtpResponseDto } from './dto/user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('users')
@@ -29,8 +29,20 @@ export class UserController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
-    return this.userService.loginUser(loginUserDto);
+  async login(@Body() verifyOtpDto: VerifyOtpDto): Promise<AuthResponseDto> {
+    return this.userService.loginUser(verifyOtpDto);
+  }
+
+  @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
+  async sendOtp(@Body() sendOtpDto: SendOtpDto): Promise<OtpStatusResponseDto> {
+    return this.userService.sendOtp(sendOtpDto);
+  }
+
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpResponseDto> {
+    return this.userService.verifyOtp(verifyOtpDto);
   }
 
   @Get()
