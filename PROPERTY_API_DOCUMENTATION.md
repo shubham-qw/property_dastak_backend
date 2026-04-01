@@ -575,4 +575,43 @@ Base path: `/media`
 - **Auth**: Not required
 
 Returns a simple string (e.g. `"Hello World!"`) from `AppController.getHello()` — useful as a health check.
+### Signup
 
+## New Sign up
+`POST /users/signup`
+
+- **Auth**: Not required
+- **Content-Type**: `application/json`
+
+High level body (fields depend on `CreateUserDto`):
+
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone_number": "+919999999999",
+  "email": "john@example.com",
+  "class": "buyer"
+}
+```
+## Verify otp
+`POST /users/verify-otp`
+
+- **Auth**: Not required
+- **Content-Type**: `application/json`
+
+High level body (fields depend on `CreateUserDto`):
+
+```json
+{ "phone_number": "+919999999999", "otp": "000000" }
+```
+## send otp
+`POST /users/send-otp`
+
+- **Auth**: Not required
+- **Content-Type**: `application/json`
+
+High level body (fields depend on `CreateUserDto`):
+
+```json
+{ "phone_number": "+919999999999" }
