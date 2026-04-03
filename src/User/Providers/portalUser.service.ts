@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import dbInstance from '../../Database/dbConn/nodeDB';
 import { CreateUserDto, UserResponseDto, UserClass, AuthResponseDto, SignupResponseDto, SendOtpDto, VerifyOtpDto, OtpStatusResponseDto, VerifyOtpResponseDto } from '../dto/user.dto';
 import { JwtService } from './jwt.service';
+import { SMSConfig } from '../../config/smsConfig';
 
 @Injectable()
 export class PortalUserService {
@@ -13,7 +14,7 @@ export class PortalUserService {
   private readonly otpStore = new Map<string, { otp: string; expiresAt: number }>();
   private readonly verifiedSignupPhones = new Map<string, number>();
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) { }
 
   async createUser(createUserDto: CreateUserDto): Promise<SignupResponseDto> {
     const { email, phone_number, ...userData } = createUserDto;
@@ -100,12 +101,68 @@ export class PortalUserService {
     }
   }
 
+  private generateOtpDigits(length: number): string {
+    let otp = '';
+    for (let i = 0; i < length; i++) {
+      otp += Math.floor(Math.random() * 10).toString();
+    }
+    return otp;
+  }
+
+  async sendOtpUsingSMSGatewayHub(otp: string, phone_number: string) {
+
+    const payload: any = {
+      Account: {
+        User: SMSConfig.SMSGATEWAYHUB_USER,
+        Password: SMSConfig.SMSGATEWAYHUB_PASSWORD,
+        SenderId: SMSConfig.SMSGATEWAYHUB_SENDERID,
+        Channel: "2",
+        DCS: "0",
+        SchedTime: null,
+        GroupId: null
+      },
+      Messages: [
+        {
+          Text: `Welcome to Property Dastak, your OTP for login is ${otp}. It is valid for 10 minutes`,
+          Number: phone_number,
+          templateId: SMSConfig.OTP_SMS_TEMPLATE_ID
+        }
+      ]
+    };
+
+    try {
+      const response = await fetch(SMSConfig.SMSGATEWAYHUB_URL!, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`SMS API Error: ${response.status} - ${JSON.stringify(data)}`);
+      }
+
+      console.log(data);
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      throw error;
+    }
+
+  }
+
   async sendOtp(sendOtpDto: SendOtpDto): Promise<OtpStatusResponseDto> {
     const { phone_number } = sendOtpDto;
     const expiresAt = Date.now() + this.OTP_EXPIRY_MS;
 
+    const otp = this.generateOtpDigits(6);
+
+    await this.sendOtpUsingSMSGatewayHub(otp,phone_number);
+
     this.otpStore.set(phone_number, {
-      otp: this.TEMP_OTP,
+      otp: otp,
       expiresAt,
     });
 
@@ -177,7 +234,7 @@ export class PortalUserService {
       FROM users 
       WHERE email = $1 OR phone_number = $2
     `;
-    
+
     const result = await dbInstance.query(query, [email, phone_number]);
     return result.rows[0] || null;
   }
@@ -199,10 +256,10 @@ export class PortalUserService {
       FROM users 
       WHERE id = $1
     `;
-    
+
     const result = await dbInstance.query(query, [id]);
     const user = result.rows[0];
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -226,10 +283,10 @@ export class PortalUserService {
       FROM users 
       WHERE user_uuid = $1
     `;
-    
+
     const result = await dbInstance.query(query, [user_uuid]);
     const user = result.rows[0];
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -281,9 +338,9 @@ export class PortalUserService {
       FROM users 
       ORDER BY created_at DESC
     `;
-    
+
     const result = await dbInstance.query(query);
-    
+
     return result.rows.map(user => ({
       id: user.id,
       user_uuid: user.user_uuid,

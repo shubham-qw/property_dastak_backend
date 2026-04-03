@@ -1,0 +1,10 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
+module.exports = {
+  SMSGATEWAYHUB_URL : process.env.SMSGATEWAYHUB_URL,
+  SMSGATEWAYHUB_USER : process.env.SMSGATEWAYHUB_USER,
+  SMSGATEWAYHUB_PASSWORD : process.env.SMSGATEWAYHUB_PASSWORD,
+  OTP_SMS_TEMPLATE_ID : process.env.OTP_SMS_TEMPLATE_ID,
+  SMSGATEWAYHUB_SENDERID : process.env.SMSGATEWAYHUB_SENDERID
+}
