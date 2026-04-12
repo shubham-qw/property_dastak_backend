@@ -73,3 +73,17 @@ export class ReelResponseDto {
   updated_at: Date;
 }
 
+export type ReelCreatorSummaryDto = {
+  id: number;
+  user_uuid: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  email: string;
+  class: string;
+};
+
+export type ReelWithUserResponseDto = ReelResponseDto & {
+  user: ReelCreatorSummaryDto | null;
+};
+

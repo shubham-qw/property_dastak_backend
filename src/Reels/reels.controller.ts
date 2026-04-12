@@ -55,14 +55,15 @@ export class ReelsController {
   async createReel(
     @Body() dto: CreateReelDto,
     @UploadedFile() file: any,
-    @Req() _req: any,
+    @Req() req: any,
   ): Promise<ReelResponseDto> {
     // If later you want user-based attribution, you can use req.user here.
     if (!file) {
       throw new BadRequestException('video file is required');
     }
     const mediaPath = '/uploads/' + file.filename;
-    return this.reelsService.createReel(dto, mediaPath);
+    const createdBy = req.user?.user_uuid ?? null;
+    return this.reelsService.createReel(dto, mediaPath, createdBy);
   }
 
   @Get()

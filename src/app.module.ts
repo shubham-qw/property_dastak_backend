@@ -8,9 +8,17 @@ import { PropertyModule } from './Property/property.module';
 import { LeadsModule } from './Leads/leads.module';
 import { MediaModule } from './media/media.module';
 import { ReelsModule } from './Reels/reels.module';
+import { AdminModule } from './Admin/admin.module';
 
 @Module({
-  imports: [UserModule, PropertyModule, LeadsModule, MediaModule, ReelsModule],
+  imports: [
+    UserModule,
+    PropertyModule,
+    LeadsModule,
+    MediaModule,
+    ReelsModule,
+    AdminModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

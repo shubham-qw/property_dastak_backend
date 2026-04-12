@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import dbInstance from '../../Database/dbConn/nodeDB';
-import { CreateReelDto, UpdateReelDto, ReelResponseDto } from '../dto/reel.dto';
+import {
+  CreateReelDto,
+  UpdateReelDto,
+  ReelResponseDto,
+  ReelWithUserResponseDto,
+} from '../dto/reel.dto';
 
 type ReelListParams = {
   userId?: string | null;
@@ -87,7 +92,11 @@ export class ReelsService {
     };
   }
 
-  async createReel(dto: CreateReelDto, mediaPath: string): Promise<ReelResponseDto> {
+  async createReel(
+    dto: CreateReelDto,
+    mediaPath: string,
+    createdByUserUuid?: string | null,
+  ): Promise<ReelResponseDto> {
     const sql = `
       INSERT INTO properties_reels (
         description,
@@ -95,8 +104,9 @@ export class ReelsService {
         thumbnail_path,
         duration_seconds,
         is_verified,
-        is_active
-      ) VALUES ($1, $2, $3, $4, COALESCE($5, false), COALESCE($6, true))
+        is_active,
+        created_by
+      ) VALUES ($1, $2, $3, $4, COALESCE($5, false), COALESCE($6, true), $7)
       RETURNING *
     `;
 
@@ -107,6 +117,7 @@ export class ReelsService {
       dto.duration_seconds ?? null,
       dto.is_verified ?? null,
       dto.is_active ?? null,
+      createdByUserUuid ?? null,
     ];
 
     try {
@@ -184,6 +195,56 @@ export class ReelsService {
   async listReels(params: ReelListParams): Promise<ReelResponseDto[]> {
     const rows = await this.listAlgorithm(params);
     return rows.map((row) => this.mapRowToDto(row));
+  }
+
+  async listReelsWithUserForAdmin(
+    limit: number,
+    offset: number,
+  ): Promise<ReelWithUserResponseDto[]> {
+    const sql = `
+      SELECT
+        pr.id,
+        pr.description,
+        pr.media_path,
+        pr.thumbnail_path,
+        pr.duration_seconds,
+        pr.views_count,
+        pr.likes_count,
+        pr.is_verified,
+        pr.is_active,
+        pr.created_at,
+        pr.updated_at,
+        u.id AS creator_user_id,
+        u.user_uuid AS creator_user_uuid,
+        u.first_name AS creator_first_name,
+        u.last_name AS creator_last_name,
+        u.phone_number AS creator_phone_number,
+        u.email AS creator_email,
+        u.class AS creator_class
+      FROM properties_reels pr
+      LEFT JOIN users u ON u.user_uuid = pr.created_by
+      ORDER BY pr.created_at DESC
+      LIMIT $1
+      OFFSET $2
+    `;
+
+    const res = await dbInstance.query(sql, [limit, offset]);
+    return res.rows.map((row: any) => {
+      const reel = this.mapRowToDto(row as ReelRow);
+      const user =
+        row.creator_user_id != null
+          ? {
+              id: row.creator_user_id,
+              user_uuid: row.creator_user_uuid,
+              first_name: row.creator_first_name,
+              last_name: row.creator_last_name,
+              phone_number: row.creator_phone_number,
+              email: row.creator_email,
+              class: row.creator_class,
+            }
+          : null;
+      return { ...reel, user };
+    });
   }
 }
 

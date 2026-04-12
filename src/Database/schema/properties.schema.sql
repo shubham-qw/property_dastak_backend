@@ -32,3 +32,5 @@ ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_longitude double precis
 CREATE EXTENSION IF NOT EXISTS postgis;
 ALTER TABLE properties
 ADD COLUMN IF NOT EXISTS property_location GEOGRAPHY(Point, 4326);
+
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;

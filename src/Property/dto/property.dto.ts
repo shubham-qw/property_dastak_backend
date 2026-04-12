@@ -326,4 +326,5 @@ export class PropertyResponseDto {
   property_size?: PropertySizeDto;
   images?: string[];
   videos?: string[];
+  is_verified?: boolean;
 }
