@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, Min } from 'class-validator';
 
 export class AdminVerifyDto {
   @IsOptional()
@@ -14,7 +14,6 @@ export class AdminVerifyDto {
   @Min(1)
   reel_id?: number;
 
-  @Type(() => Boolean)
-  @IsBoolean()
-  is_verified: boolean;
+  @IsIn(['accepted', 'rejected'])
+  is_verified: 'accepted' | 'rejected';
 }

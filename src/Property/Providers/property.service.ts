@@ -399,6 +399,10 @@ export class PropertyService {
     const query = `
       SELECT 
         p.*,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.phone,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
         pk.parking_count, pk.parking_type,
         (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
@@ -408,6 +412,7 @@ export class PropertyService {
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
+      LEFT JOIN users u on p.created_by = u.user_uuid
       ORDER BY p.created_at DESC
       LIMIT $1 OFFSET $2
     `;

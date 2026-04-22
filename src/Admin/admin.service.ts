@@ -33,7 +33,7 @@ export class AdminService {
     const result: {
       property_id?: number;
       reel_id?: number;
-      is_verified: boolean;
+      is_verified: 'accepted' | 'rejected';
     } = { is_verified: dto.is_verified };
 
     if (dto.property_id != null) {

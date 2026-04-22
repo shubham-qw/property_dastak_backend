@@ -12,6 +12,3 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT NULL
 );
 
-ALTER TABLE users DROP COLUMN password;
-ALTER TABLE users DROP COLUMN salt;
-

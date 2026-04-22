@@ -20,3 +20,5 @@ CREATE TABLE IF NOT EXISTS properties_reels (
 );
 
 ALTER TABLE properties_reels ADD COLUMN IF NOT EXISTS created_by UUID;
+ALTER TABLE properties_reels ALTER COLUMN is_verified TYPE VARCHAR(20);
+ALTER TABLE properties_reels ALTER COLUMN is_verified SET DEFAULT NULL;
