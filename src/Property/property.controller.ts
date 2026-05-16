@@ -26,11 +26,12 @@ import { JwtAuthGuard } from '../User/guards/jwt-auth.guard';
 
 @Controller('properties')
 @UsePipes(new ValidationPipe({ transform: true }))
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 export class PropertyController {
   constructor(private readonly propertyService: PropertyService) { }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async createProperty(@Body() createPropertyDto: CreatePropertyDto, @Req() req: any): Promise<PropertyResponseDto> {
 

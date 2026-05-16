@@ -61,7 +61,7 @@ export class PropertyService {
               parking_type: row.parking_type as ParkingType,
             }
           : undefined,
-      is_verified: row.is_verified ?? row.is_verfied ?? false,
+      is_verified: row.is_verified,
     };
   }
 
@@ -101,6 +101,7 @@ export class PropertyService {
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
       ${whereSql}
+      and is_verified = 'accepted'
       ORDER BY COALESCE(v.views, 0) DESC, p.created_at DESC
       LIMIT ${Number(limit) || 5}
     `;
@@ -402,7 +403,7 @@ export class PropertyService {
         u.first_name,
         u.last_name,
         u.email,
-        u.phone,
+        u.phone_number,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
         pk.parking_count, pk.parking_type,
         (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
@@ -413,12 +414,21 @@ export class PropertyService {
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
       LEFT JOIN users u on p.created_by = u.user_uuid
+      where p.is_verified is null
       ORDER BY p.created_at DESC
       LIMIT $1 OFFSET $2
     `;
 
     const result = await dbInstance.query(query, [limit, offset]);
-    return result.rows.map((row) => this.mapRowToPropertyResponse(row));
+    //return result.rows.map((row) => this.mapRowToPropertyResponse(row));
+   	return result.rows.map((row) => {
+      const obj : any = this.mapRowToPropertyResponse(row);
+      obj.first_name = row.first_name;
+      obj.last_name = row.last_name;
+      obj.email = row.email;
+      obj.phone_number = row.phone_number;
+      return obj;
+    });
   }
 
   async getPropertyById(id: number): Promise<PropertyResponseDto> {
@@ -665,6 +675,7 @@ export class PropertyService {
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
       WHERE LOWER(p.city) = LOWER($1)
+      and p.is_verified = 'accepted'
       ORDER BY p.created_at DESC
     `;
 
@@ -725,6 +736,7 @@ export class PropertyService {
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
       WHERE LOWER(p.property_type) = LOWER($1)
+      and p.is_verified = 'accepted'
       ORDER BY p.created_at DESC
     `;
 

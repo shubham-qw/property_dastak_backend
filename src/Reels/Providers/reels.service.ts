@@ -67,6 +67,7 @@ export class ReelsService {
         updated_at
       FROM properties_reels
       ${where}
+      and is_verified = 'accepted'
       ORDER BY created_at DESC
       LIMIT $${limitIndex}
       OFFSET $${offsetIndex}
@@ -223,6 +224,7 @@ export class ReelsService {
         u.class AS creator_class
       FROM properties_reels pr
       LEFT JOIN users u ON u.user_uuid = pr.created_by
+      where is_verified is null
       ORDER BY pr.created_at DESC
       LIMIT $1
       OFFSET $2

@@ -27,11 +27,12 @@ import { JwtAuthGuard } from '../User/guards/jwt-auth.guard';
 
 @Controller('reels')
 @UsePipes(new ValidationPipe({ transform: true }))
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 export class ReelsController {
   constructor(private readonly reelsService: ReelsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('video', {
       storage: diskStorage({
