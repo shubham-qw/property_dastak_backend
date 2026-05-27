@@ -5,6 +5,7 @@ import {
   UpdateReelDto,
   ReelResponseDto,
   ReelWithUserResponseDto,
+  ReelLikeActionResponseDto,
 } from '../dto/reel.dto';
 
 type ReelListParams = {
@@ -247,6 +248,155 @@ export class ReelsService {
           : null;
       return { ...reel, user };
     });
+  }
+
+  private async getUserIdFromUuid(userUuid: string): Promise<number> {
+    const userRes = await dbInstance.query(
+      'SELECT id FROM users WHERE user_uuid = $1',
+      [userUuid],
+    );
+
+    if (!userRes.rows.length) {
+      throw new NotFoundException('User not found');
+    }
+
+    return userRes.rows[0].id as number;
+  }
+
+  async likeReel(reelId: number, userUuid: string): Promise<ReelLikeActionResponseDto> {
+    if (!Number.isInteger(reelId) || reelId <= 0) {
+      throw new BadRequestException('Invalid reel id');
+    }
+
+    const userId = await this.getUserIdFromUuid(userUuid);
+    const client = await dbInstance.connection();
+
+    try {
+      await client.query('BEGIN');
+
+      const reelRes = await client.query(
+        'SELECT id FROM properties_reels WHERE id = $1 FOR UPDATE',
+        [reelId],
+      );
+      if (!reelRes.rows.length) {
+        throw new NotFoundException('Reel not found');
+      }
+
+      const alreadyLikedRes = await client.query(
+        'SELECT id FROM reel_like WHERE reel_id = $1 AND user_id = $2',
+        [reelId, userId],
+      );
+
+      if (!alreadyLikedRes.rows.length) {
+        await client.query(
+          'INSERT INTO reel_like (reel_id, user_id) VALUES ($1, $2)',
+          [reelId, userId],
+        );
+
+        await client.query(
+          `
+            UPDATE properties_reels
+            SET
+              likes_count = COALESCE(likes_count, 0) + 1,
+              like_count = COALESCE(like_count, 0) + 1,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+          `,
+          [reelId],
+        );
+      }
+
+      const countRes = await client.query(
+        `
+          SELECT
+            COALESCE(like_count, likes_count, 0) AS likes_count
+          FROM properties_reels
+          WHERE id = $1
+        `,
+        [reelId],
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        reel_id: reelId,
+        likes_count: parseInt(countRes.rows[0].likes_count, 10) || 0,
+        liked: true,
+      };
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  async dislikeReel(reelId: number, userUuid: string): Promise<ReelLikeActionResponseDto> {
+    if (!Number.isInteger(reelId) || reelId <= 0) {
+      throw new BadRequestException('Invalid reel id');
+    }
+
+    const userId = await this.getUserIdFromUuid(userUuid);
+    const client = await dbInstance.connection();
+
+    try {
+      await client.query('BEGIN');
+
+      const reelRes = await client.query(
+        'SELECT id FROM properties_reels WHERE id = $1 FOR UPDATE',
+        [reelId],
+      );
+      if (!reelRes.rows.length) {
+        throw new NotFoundException('Reel not found');
+      }
+
+      const likedRes = await client.query(
+        'SELECT id FROM reel_like WHERE reel_id = $1 AND user_id = $2',
+        [reelId, userId],
+      );
+
+      if (likedRes.rows.length) {
+        await client.query('DELETE FROM reel_like WHERE reel_id = $1 AND user_id = $2', [
+          reelId,
+          userId,
+        ]);
+
+        await client.query(
+          `
+            UPDATE properties_reels
+            SET
+              likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0),
+              like_count = GREATEST(COALESCE(like_count, 0) - 1, 0),
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+          `,
+          [reelId],
+        );
+      }
+
+      const countRes = await client.query(
+        `
+          SELECT
+            COALESCE(like_count, likes_count, 0) AS likes_count
+          FROM properties_reels
+          WHERE id = $1
+        `,
+        [reelId],
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        reel_id: reelId,
+        likes_count: parseInt(countRes.rows[0].likes_count, 10) || 0,
+        liked: false,
+      };
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 }
 

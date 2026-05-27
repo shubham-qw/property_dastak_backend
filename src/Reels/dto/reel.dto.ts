@@ -73,6 +73,12 @@ export class ReelResponseDto {
   updated_at: Date;
 }
 
+export class ReelLikeActionResponseDto {
+  reel_id: number;
+  likes_count: number;
+  liked: boolean;
+}
+
 export type ReelCreatorSummaryDto = {
   id: number;
   user_uuid: string;

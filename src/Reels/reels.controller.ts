@@ -22,7 +22,12 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';
 import { ReelsService } from './Providers/reels.service';
-import { CreateReelDto, UpdateReelDto, ReelResponseDto } from './dto/reel.dto';
+import {
+  CreateReelDto,
+  UpdateReelDto,
+  ReelResponseDto,
+  ReelLikeActionResponseDto,
+} from './dto/reel.dto';
 import { JwtAuthGuard } from '../User/guards/jwt-auth.guard';
 
 @Controller('reels')
@@ -106,6 +111,26 @@ export class ReelsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteReel(@Param('id') id: string): Promise<void> {
     return this.reelsService.deleteReel(parseInt(id, 10));
+  }
+
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async likeReel(
+    @Param('id') id: string,
+    @Req() req: any,
+  ): Promise<ReelLikeActionResponseDto> {
+    return this.reelsService.likeReel(parseInt(id, 10), req.user.user_uuid);
+  }
+
+  @Post(':id/dislike')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async dislikeReel(
+    @Param('id') id: string,
+    @Req() req: any,
+  ): Promise<ReelLikeActionResponseDto> {
+    return this.reelsService.dislikeReel(parseInt(id, 10), req.user.user_uuid);
   }
 }
 

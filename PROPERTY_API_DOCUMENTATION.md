@@ -497,6 +497,42 @@ Returns updated `ReelResponseDto`.
 
 Returns **204 No Content** on success.
 
+### Like Reel
+
+`POST /reels/:id/like`
+
+- **Auth**: Required (JWT)
+- Adds a like for the current user if not already liked.
+- Increases reel like counter in `properties_reels`.
+
+#### Success response (200)
+
+```json
+{
+  "reel_id": 12,
+  "likes_count": 9,
+  "liked": true
+}
+```
+
+### Dislike Reel
+
+`POST /reels/:id/dislike`
+
+- **Auth**: Required (JWT)
+- Removes current user like if present.
+- Decreases reel like counter in `properties_reels` (never below 0).
+
+#### Success response (200)
+
+```json
+{
+  "reel_id": 12,
+  "likes_count": 8,
+  "liked": false
+}
+```
+
 ---
 
 ## Leads APIs
