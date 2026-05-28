@@ -69,6 +69,7 @@ export class ReelResponseDto {
   likes_count: number;
   is_verified: boolean;
   is_active: boolean;
+  liked?: boolean;
   created_at: Date;
   updated_at: Date;
 }

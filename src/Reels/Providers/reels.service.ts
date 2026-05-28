@@ -24,6 +24,7 @@ type ReelRow = {
   likes_count: string | number;
   is_verified: boolean;
   is_active: boolean;
+  liked?: boolean;
   created_at: Date;
   updated_at: Date;
 };
@@ -53,26 +54,58 @@ export class ReelsService {
     values.push(params.offset);
     const offsetIndex = values.length;
 
-    const sql = `
+    let sql = `
       SELECT
-        id,
-        description,
-        media_path,
-        thumbnail_path,
-        duration_seconds,
-        views_count,
-        likes_count,
-        is_verified,
-        is_active,
-        created_at,
-        updated_at
-      FROM properties_reels
+        pr.id,
+        pr.description,
+        pr.media_path,
+        pr.thumbnail_path,
+        pr.duration_seconds,
+        pr.views_count,
+        pr.likes_count,
+        pr.is_verified,
+        pr.is_active,
+        false AS liked,
+        pr.created_at,
+        pr.updated_at
+      FROM properties_reels pr
       ${where}
-      and is_verified = 'accepted'
-      ORDER BY created_at DESC
+      and pr.is_verified = 'accepted'
+      ORDER BY pr.created_at DESC
       LIMIT $${limitIndex}
       OFFSET $${offsetIndex}
     `;
+
+    if (params.userId) {
+      values.unshift(params.userId);
+      const userUuidIndex = 1;
+      const adjustedLimitIndex = limitIndex + 1;
+      const adjustedOffsetIndex = offsetIndex + 1;
+
+      sql = `
+        SELECT
+          pr.id,
+          pr.description,
+          pr.media_path,
+          pr.thumbnail_path,
+          pr.duration_seconds,
+          pr.views_count,
+          pr.likes_count,
+          pr.is_verified,
+          pr.is_active,
+          CASE WHEN rl.id IS NOT NULL THEN true ELSE false END AS liked,
+          pr.created_at,
+          pr.updated_at
+        FROM properties_reels pr
+        LEFT JOIN users u ON u.user_uuid = $${userUuidIndex}
+        LEFT JOIN reel_like rl ON rl.reel_id = pr.id AND rl.user_id = u.id
+        ${where}
+        and pr.is_verified = 'accepted'
+        ORDER BY pr.created_at DESC
+        LIMIT $${adjustedLimitIndex}
+        OFFSET $${adjustedOffsetIndex}
+      `;
+    }
 
     const res = await dbInstance.query(sql, values);
     return res.rows as ReelRow[];
@@ -89,6 +122,7 @@ export class ReelsService {
       likes_count: typeof row.likes_count === 'string' ? parseInt(row.likes_count, 10) : row.likes_count,
       is_verified: row.is_verified,
       is_active: row.is_active,
+      liked: Boolean(row.liked),
       created_at: row.created_at,
       updated_at: row.updated_at,
     };
