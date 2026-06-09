@@ -72,6 +72,7 @@ export class ReelResponseDto {
   liked?: boolean;
   created_at: Date;
   updated_at: Date;
+  user_details?: any;
 }
 
 export class ReelLikeActionResponseDto {

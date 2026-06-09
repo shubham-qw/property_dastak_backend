@@ -27,6 +27,10 @@ type ReelRow = {
   liked?: boolean;
   created_at: Date;
   updated_at: Date;
+  first_name : string | null,
+  last_name : string | null,
+  email : string | null,
+  phone_number : string | null,
 };
 
 type ReelListAlgorithm = (params: ReelListParams) => Promise<ReelRow[]>;
@@ -67,8 +71,13 @@ export class ReelsService {
         pr.is_active,
         false AS liked,
         pr.created_at,
-        pr.updated_at
+        pr.updated_at,
+	u.first_name,
+        u.last_name,
+        u.phone_number,
+        u.email
       FROM properties_reels pr
+      LEFT JOIN users u ON u.user_uuid = pr.created_by
       ${where}
       and pr.is_verified = 'accepted'
       ORDER BY pr.created_at DESC
@@ -125,6 +134,12 @@ export class ReelsService {
       liked: Boolean(row.liked),
       created_at: row.created_at,
       updated_at: row.updated_at,
+      user_details : {
+	 first_name : row.first_name,
+        last_name : row.last_name,
+        email : row.email,
+        phone_number : row.phone_number,
+      }
     };
   }
 
@@ -259,7 +274,7 @@ export class ReelsService {
         u.class AS creator_class
       FROM properties_reels pr
       LEFT JOIN users u ON u.user_uuid = pr.created_by
-      where is_verified is null
+      where is_verified is null or is_verified = 'false'
       ORDER BY pr.created_at DESC
       LIMIT $1
       OFFSET $2

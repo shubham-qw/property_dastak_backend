@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS reel_like (
     id BIGSERIAL PRIMARY KEY,
-    reel_id BIGINT NOT NULL REFERENCES properties_reels(id) ON DELETE CASCADE,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    reel_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_reel_like_reel_id ON reel_like(reel_id);

@@ -388,6 +388,7 @@ export class PropertyService {
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
+      where p.created_by = '${userId}'
       ORDER BY p.created_at DESC
     `;
 
@@ -435,6 +436,10 @@ export class PropertyService {
     const query = `
       SELECT 
         p.*,
+	u.first_name,
+        u.last_name,
+        u.email,
+        u.phone_number,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
         pk.parking_count, pk.parking_type,
         (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
@@ -444,6 +449,7 @@ export class PropertyService {
       FROM properties p
       LEFT JOIN property_details pd ON p.id = pd.property_id
       LEFT JOIN parking pk ON p.id = pk.property_id
+      LEFT JOIN users u on p.created_by = u.user_uuid
       WHERE p.id = $1
     `;
 
@@ -492,7 +498,13 @@ export class PropertyService {
         property_id: row.id,
         parking_count: row.parking_count,
         parking_type: row.parking_type as ParkingType
-      } : undefined
+      } : undefined,
+      user_details : {
+        first_name : row.first_name,
+        last_name : row.last_name,
+        email : row.email,
+        phone_number : row.phone_number,
+      }
     };
   }
 

@@ -327,4 +327,5 @@ export class PropertyResponseDto {
   images?: string[];
   videos?: string[];
   is_verified?: boolean;
+  user_details?: any;
 }

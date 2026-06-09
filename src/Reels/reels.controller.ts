@@ -29,6 +29,8 @@ import {
   ReelLikeActionResponseDto,
 } from './dto/reel.dto';
 import { JwtAuthGuard } from '../User/guards/jwt-auth.guard';
+import {JwtService} from '../User/Providers/jwt.service';
+
 
 @Controller('reels')
 @UsePipes(new ValidationPipe({ transform: true }))
@@ -79,6 +81,15 @@ export class ReelsController {
     @Query('limit') limitStr?: string,
     @Query('offset') offsetStr?: string,
   ): Promise<ReelResponseDto[]> {
+
+    const authHeader = req.headers.authorization;
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const payload = new JwtService().decodeToken(token);
+      req.user = payload;
+    }
+
     const userId: string | null = req.user?.user_uuid ?? null;
     const limit =
       limitStr !== undefined ? Math.max(1, parseInt(limitStr, 10) || 1) : 20;
