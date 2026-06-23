@@ -104,10 +104,15 @@ export class ReelsService {
           pr.is_active,
           CASE WHEN rl.id IS NOT NULL THEN true ELSE false END AS liked,
           pr.created_at,
-          pr.updated_at
+          pr.updated_at,
+	   us.first_name,
+        us.last_name,
+        us.phone_number,
+        us.email
         FROM properties_reels pr
         LEFT JOIN users u ON u.user_uuid = $${userUuidIndex}
         LEFT JOIN reel_like rl ON rl.reel_id = pr.id AND rl.user_id = u.id
+	LEFT JOIN users us ON us.user_uuid = pr.created_by
         ${where}
         and pr.is_verified = 'accepted'
         ORDER BY pr.created_at DESC

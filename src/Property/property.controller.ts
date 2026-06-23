@@ -130,6 +130,7 @@ export class PropertyController {
   }
 
   @Post('user/save')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async saveProperties(@Body() SavePropertiesBody: SavePropertiesBodyDto, @Req() req: any): Promise<void> {
 
@@ -139,6 +140,7 @@ export class PropertyController {
   }
 
   @Get('user/save')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async getSaveProperties(@Req() req: any): Promise<SavePropertiesDto[]> {
 

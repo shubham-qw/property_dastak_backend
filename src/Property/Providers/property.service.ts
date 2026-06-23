@@ -483,6 +483,7 @@ export class PropertyService {
       property_features: row.property_features,
       property_amenities: row.property_amenities,
       created_at: row.created_at,
+      property_size: row.property_size,
       updated_at: row.updated_at,
       images: row.images || [],
       videos: row.videos || [],
