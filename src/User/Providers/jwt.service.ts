@@ -42,9 +42,9 @@ export class JwtService {
         case 'm': return value * 60;
         case 'h': return value * 60 * 60;
         case 'd': return value * 60 * 60 * 24;
-        default: return 24 * 60 * 60; // Default to 24 hours
+        default: return 720 * 60 * 60; // Default to 24 hours
       }
     }
-    return 24 * 60 * 60; // Default to 24 hours in seconds
+    return 720 * 60 * 60; // Default to 24 hours in seconds
   }
 }
