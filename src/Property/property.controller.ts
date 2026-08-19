@@ -72,7 +72,13 @@ export class PropertyController {
   @HttpCode(HttpStatus.OK)
   async getAllProperties(@Req() req: any): Promise<PropertyResponseDto[]> {
     const userId = req.user.user_uuid;
-    return this.propertyService.getAllProperties(userId);
+    let admin = false;
+
+    if (userId == '8bdc49c1-2380-4bc1-96db-2b0cb01194fc') {
+	    admin = true;
+    }
+    
+    return this.propertyService.getAllProperties(userId,admin);
   }
 
   @Get('home')
@@ -138,6 +144,17 @@ export class PropertyController {
     const propertyId = SavePropertiesBody.propertyId;
     await this.propertyService.saveProperties(userId, propertyId);
   }
+
+   @Post('user/unsave')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  async unSaveProperties(@Body() SavePropertiesBody: SavePropertiesBodyDto, @Req() req: any): Promise<void> {
+
+    const userId = req.user.sub;
+    const propertyId = SavePropertiesBody.propertyId;
+    await this.propertyService.unsaveProperties(userId, propertyId);
+  }
+
 
   @Get('user/save')
   @UseGuards(JwtAuthGuard)

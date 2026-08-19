@@ -263,8 +263,25 @@ export class PropertyService {
     }
   }
 
-  async getAllPropertiesByUser(userId: string): Promise<PropertyResponseDto[]> {
-    const query = `
+  async getAllPropertiesByUser(userId: string,admin = false): Promise<PropertyResponseDto[]> {
+    const query = admin ? `   SELECT
+        p.*,
+        pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos,
+           CASE
+        WHEN sp.user_id IS NOT NULL THEN true
+        ELSE false
+    END AS "isSaved"
+      FROM properties p
+      LEFT JOIN property_details pd ON p.id = pd.property_id
+      LEFT JOIN parking pk ON p.id = pk.property_id
+      LEFT JOIN pd_save_properties sp
+      ON sp.propertyid = p.id
+      ORDER BY p.created_at DESC` : `
       SELECT 
         p.*,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
@@ -375,8 +392,20 @@ export class PropertyService {
     return mapped;
   }
 
-  async getAllProperties(userId: string): Promise<PropertyResponseDto[]> {
-    const query = `
+  async getAllProperties(userId: string, admin : boolean): Promise<PropertyResponseDto[]> {
+    const query = admin ?  `SELECT
+        p.*,
+        pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
+        pk.parking_count, pk.parking_type,
+        (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
+           FROM property_images pi WHERE pi.property_id = p.id) AS images,
+        (SELECT COALESCE(array_agg(pv.url ORDER BY pv.id), ARRAY[]::text[])
+           FROM property_videos pv WHERE pv.property_id = p.id) AS videos
+      FROM properties p
+      LEFT JOIN property_details pd ON p.id = pd.property_id
+      LEFT JOIN parking pk ON p.id = pk.property_id
+      ORDER BY p.created_at DESC` :
+	`
       SELECT 
         p.*,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
@@ -860,6 +889,16 @@ export class PropertyService {
         if (!response.rowCount) {
             throw new Error(`Unable to save the property.`);
         }
+
+    }
+
+    async unsaveProperties(userId: number, propertyId : number) {
+
+	    const deleteQuery = `delete from pd_save_properties where userid = $1 and propertyid = $2;`;
+
+	    const dbValues = [userId,propertyId];
+
+	    const response = await dbInstance.query(deleteQuery, dbValues);
 
     }
 
