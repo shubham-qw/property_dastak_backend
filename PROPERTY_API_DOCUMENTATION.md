@@ -535,6 +535,189 @@ Returns **204 No Content** on success.
 
 ---
 
+## Chat APIs
+
+Base path: `/chat`  
+WebSocket path (same Nest port): `ws://localhost:8080/ws/chat?token=<JWT>`
+
+Chat uses the **`ws`** library attached to the existing Nest HTTP server (no extra port).  
+Legacy property-view tracking remains on `WS_PORT` (default `4000`).
+
+Apply schema first: `src/Database/schema/chat.schema.sql`
+
+### REST (JWT required)
+
+#### List conversations
+
+`GET /chat/conversations`
+
+Returns `ConversationDto[]` (other user, last message, unread count, online flag).
+
+#### Start / get direct conversation
+
+`POST /chat/conversations`
+
+```json
+{ "other_user_uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
+```
+
+Returns `ConversationDto` (creates one if missing).
+
+#### Get messages
+
+`GET /chat/conversations/:id/messages?limit=50&offset=0`
+
+Returns `ChatMessageDto[]` (newest first).
+
+#### Send message (REST + live fan-out)
+
+`POST /chat/messages`
+
+```json
+{
+  "conversation_id": 12,
+  "content": "Hello"
+}
+```
+
+or start/send in one step:
+
+```json
+{
+  "to_user_uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "content": "Hello"
+}
+```
+
+Online recipients also receive a WS `{ "type": "message", ... }` event.
+
+#### Mark conversation read
+
+`PUT /chat/conversations/:id/read`
+
+```json
+{ "ok": true }
+```
+
+#### Get user presence
+
+`GET /chat/presence/:userUuid`
+
+```json
+{ "user_uuid": "...", "status": "online" }
+```
+
+---
+
+### WebSocket protocol
+
+#### Connect
+
+```
+ws://localhost:8080/ws/chat?token=<access_token>
+```
+
+Auth alternative: `Authorization: Bearer <access_token>` on the upgrade request.
+
+On success:
+
+```json
+{
+  "type": "connected",
+  "user_id": 10,
+  "user_uuid": "...",
+  "reconnect": true
+}
+```
+
+- `reconnect: true` means the user was offline and just came back — client should refetch conversations/messages.
+- Server heartbeats with WS ping every 30s; dead sockets are dropped and marked offline.
+
+#### Client → Server events
+
+| type | payload | purpose |
+|------|---------|---------|
+| `ping` | `{}` | keepalive → server replies `pong` |
+| `join` | `{ conversation_id }` | subscribe/assert membership |
+| `leave` | `{ conversation_id }` | leave room locally |
+| `send_message` | `{ conversation_id?, to_user_uuid?, content }` | send chat message |
+| `typing` | `{ conversation_id, is_typing }` | live typing indicator |
+| `mark_read` | `{ conversation_id }` | mark peer messages read |
+| `get_presence` | `{ user_uuids: string[] }` | batch online/offline lookup |
+
+Example send:
+
+```json
+{
+  "type": "send_message",
+  "to_user_uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "content": "Hi, is this still available?"
+}
+```
+
+Example typing:
+
+```json
+{
+  "type": "typing",
+  "conversation_id": 12,
+  "is_typing": true
+}
+```
+
+#### Server → Client events
+
+| type | meaning |
+|------|---------|
+| `connected` | auth OK |
+| `pong` | response to `ping` |
+| `message` | new chat message |
+| `typing` | peer typing start/stop |
+| `presence` | `{ user_uuid, status: "online"\|"offline" }` |
+| `presence_list` | batch presence result |
+| `conversation_updated` | inbox row refresh |
+| `error` | `{ code, message }` |
+
+#### Online / offline
+
+- First open socket for a user → broadcast `presence` `online`
+- Last socket closed / timed out → broadcast `presence` `offline`
+- Multi-device: user stays online while any device remains connected
+
+#### Client auto-reconnect (recommended)
+
+Server cannot force reconnect; clients should:
+
+1. On `close` / network error, reconnect with exponential backoff (e.g. 1s → 2s → 4s … max 30s)
+2. Reconnect URL must include a fresh JWT (`?token=...`)
+3. On `connected` with `reconnect: true`, call:
+   - `GET /chat/conversations`
+   - `GET /chat/conversations/:id/messages` for open threads
+4. Keep sending `ping` every ~20–25s as an app-level keepalive
+
+Example JS reconnect sketch:
+
+```js
+let delay = 1000;
+function connectChat(token) {
+  const ws = new WebSocket(`ws://localhost:8080/ws/chat?token=${token}`);
+  ws.onopen = () => { delay = 1000; };
+  ws.onclose = () => {
+    setTimeout(() => connectChat(token), delay);
+    delay = Math.min(delay * 2, 30000);
+  };
+  ws.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'connected' && ev.reconnect) {
+      // refetch conversations + active thread messages
+    }
+  };
+  return ws;
+}
+```
+
+---
+
 ## Leads APIs
 
 Base path: `/leads`

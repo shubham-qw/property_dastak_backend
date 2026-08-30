@@ -9,6 +9,7 @@ import { LeadsModule } from './Leads/leads.module';
 import { MediaModule } from './media/media.module';
 import { ReelsModule } from './Reels/reels.module';
 import { AdminModule } from './Admin/admin.module';
+import { ChatModule } from './Chat/chat.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AdminModule } from './Admin/admin.module';
     MediaModule,
     ReelsModule,
     AdminModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
