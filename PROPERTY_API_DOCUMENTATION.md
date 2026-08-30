@@ -543,19 +543,46 @@ WebSocket path (same Nest port): `ws://localhost:8080/ws/chat?token=<JWT>`
 Chat uses the **`ws`** library attached to the existing Nest HTTP server (no extra port).  
 Legacy property-view tracking remains on `WS_PORT` (default `4000`).
 
-Apply schema first: `src/Database/schema/chat.schema.sql`
-
 ### REST (JWT required)
 
 #### List conversations
 
 `GET /chat/conversations`
 
-Returns `ConversationDto[]` (other user, last message, unread count, online flag).
+Returns Arrays of conversation with users.
+
+id = conservation_id
+
+[
+    {
+        "id": 1,
+        "created_at": "2026-08-30T11:14:42.742Z",
+        "updated_at": "2026-08-30T12:42:36.998Z",
+        "other_user": {
+            "id": 3,
+            "user_uuid": "7051c363-072c-4913-aebc-028f533fcba5",
+            "first_name": "Ganesh",
+            "last_name": "Gaitonde",
+            "is_online": false
+        },
+        "last_message": {
+            "id": 4,
+            "conversation_id": 1,
+            "sender_id": 2,
+            "sender_uuid": "98b38f3c-a4a6-4a3b-8fff-ea02bfcebcf7",
+            "content": "Hi, I have some queries about the properties",
+            "created_at": "2026-08-30T12:42:36.982Z",
+            "is_read": false
+        },
+        "unread_count": 1
+    }
+]
 
 #### Start / get direct conversation
 
 `POST /chat/conversations`
+
+use this to create conversation / chat with other users when users are not connected by websockets.
 
 ```json
 { "other_user_uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }
@@ -569,9 +596,32 @@ Returns `ConversationDto` (creates one if missing).
 
 Returns `ChatMessageDto[]` (newest first).
 
+[
+    {
+        "id": 2,
+        "conversation_id": 1,
+        "sender_id": 2,
+        "sender_uuid": "98b38f3c-a4a6-4a3b-8fff-ea02bfcebcf7",
+        "content": "Hi, is this still available?",
+        "created_at": "2026-08-30T12:32:11.327Z",
+        "is_read": false
+    },
+    {
+        "id": 1,
+        "conversation_id": 1,
+        "sender_id": 2,
+        "sender_uuid": "98b38f3c-a4a6-4a3b-8fff-ea02bfcebcf7",
+        "content": "Hello",
+        "created_at": "2026-08-30T11:14:42.820Z",
+        "is_read": false
+    }
+]
+
 #### Send message (REST + live fan-out)
 
 `POST /chat/messages`
+
+send message if other user is offline and websocket is disconnected.
 
 ```json
 {
@@ -581,6 +631,8 @@ Returns `ChatMessageDto[]` (newest first).
 ```
 
 or start/send in one step:
+
+When the conversation is new
 
 ```json
 {
