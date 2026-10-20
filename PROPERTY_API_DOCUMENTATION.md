@@ -10,6 +10,7 @@
 - User signup/login endpoints are **public**.
 - Most resource endpoints (properties, reels, some user endpoints) are protected by **JWT**.
 - **Header**: `Authorization: Bearer <access_token>`
+- **Admin** routes (news create/update/delete, `/admin/*`) also require the JWT `user_uuid` to be listed in `ADMIN_USER_UUIDS`. Non-admins receive **403 Forbidden**.
 
 If the token is missing/invalid/expired, you will receive **401 Unauthorized** where JWT is required.
 
@@ -529,9 +530,120 @@ Returns **204 No Content** on success.
 {
   "reel_id": 12,
   "likes_count": 8,
-  "liked": false
+    "liked": false
 }
 ```
+
+---
+
+## News APIs
+
+Base path: `/news`
+
+- **GET** is public (no JWT). Returns only the **latest 10** news items.
+- **POST / PUT / DELETE** require **JWT + admin**. The token `user_uuid` must be in `ADMIN_USER_UUIDS`.
+
+Schema fields: `id`, `title`, `image`, `created_at`.
+
+`image` in the response is a stored path (e.g. `/uploads/<filename>`). To **fetch the image**, use the media API (same as properties/reels in production):
+
+`GET /media?fileName=uploads/<filename>&mediaType=image`
+
+Example: if `image` is `/uploads/1730000000000-123456789.jpg`, call:
+
+`GET /media?fileName=uploads/1730000000000-123456789.jpg&mediaType=image`
+
+Drop the leading slash from `image` and pass that as `fileName`.
+
+### List Latest News
+
+`GET /news`
+
+- **Auth**: Not required
+- Always returns at most **10** items, newest first (`created_at` descending). No pagination params.
+
+#### Success response (200)
+
+```json
+[
+  {
+    "id": 3,
+    "title": "New township launched in Indore",
+    "image": "/uploads/1730000000000-123456789.jpg",
+    "created_at": "2026-10-20T08:30:00.000Z"
+  }
+]
+```
+
+### Create News
+
+`POST /news`
+
+- **Auth**: Required (JWT + admin)
+- **Content-Type**: `multipart/form-data`
+- **Form fields**:
+  - `title`: required string
+  - `image`: required image file (`image/*`)
+
+The `image` field in the response is **not** the file bytes. Use this API to fetch the uploaded image:
+
+`GET /media?fileName=uploads/<filename>&mediaType=image`
+
+Take `image` from the create response (e.g. `/uploads/1730000000000-123456789.jpg`), remove the leading `/`, and pass it as `fileName`.
+
+#### Success response (201)
+
+```json
+{
+  "id": 1,
+  "title": "New township launched in Indore",
+  "image": "/uploads/1730000000000-123456789.jpg",
+  "created_at": "2026-10-20T08:30:00.000Z"
+}
+```
+
+Fetch that image:
+
+`GET /media?fileName=uploads/1730000000000-123456789.jpg&mediaType=image`
+
+#### Error responses
+
+- **400 Bad Request**: missing `title` or `image`, or non-image file
+- **401 Unauthorized**: missing/invalid JWT
+- **403 Forbidden**: authenticated user is not an admin
+
+### Update News
+
+`PUT /news/:id`
+
+- **Auth**: Required (JWT + admin)
+- **Content-Type**: `multipart/form-data`
+- **Form fields** (all optional; send only what you want to change):
+  - `title`: string
+  - `image`: image file (`image/*`)
+
+Returns updated `NewsResponseDto`.
+
+#### Error responses
+
+- **400 Bad Request**: non-image file
+- **401 Unauthorized**: missing/invalid JWT
+- **403 Forbidden**: authenticated user is not an admin
+- **404 Not Found**: news id does not exist
+
+### Delete News
+
+`DELETE /news/:id`
+
+- **Auth**: Required (JWT + admin)
+
+Returns **204 No Content** on success.
+
+#### Error responses
+
+- **401 Unauthorized**: missing/invalid JWT
+- **403 Forbidden**: authenticated user is not an admin
+- **404 Not Found**: news id does not exist
 
 ---
 

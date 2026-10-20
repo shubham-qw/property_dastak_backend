@@ -10,6 +10,7 @@ import { MediaModule } from './media/media.module';
 import { ReelsModule } from './Reels/reels.module';
 import { AdminModule } from './Admin/admin.module';
 import { ChatModule } from './Chat/chat.module';
+import { NewsModule } from './News/news.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ChatModule } from './Chat/chat.module';
     ReelsModule,
     AdminModule,
     ChatModule,
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [
