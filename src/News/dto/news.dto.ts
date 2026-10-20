@@ -4,6 +4,10 @@ export class CreateNewsDto {
   @IsString()
   @IsNotEmpty()
   title: string;
+
+  @IsNotEmpty()
+  @IsString()
+  news_url : string;
 }
 
 export class UpdateNewsDto {
@@ -11,6 +15,11 @@ export class UpdateNewsDto {
   @IsString()
   @IsNotEmpty()
   title?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  news_url : string;
 }
 
 export class NewsResponseDto {
@@ -18,4 +27,5 @@ export class NewsResponseDto {
   title: string;
   image: string;
   created_at: Date;
+  news_url : string;
 }

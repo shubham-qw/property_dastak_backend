@@ -570,7 +570,8 @@ Drop the leading slash from `image` and pass that as `fileName`.
     "id": 3,
     "title": "New township launched in Indore",
     "image": "/uploads/1730000000000-123456789.jpg",
-    "created_at": "2026-10-20T08:30:00.000Z"
+    "created_at": "2026-10-20T08:30:00.000Z",
+    "news_url": "http://www.youtube.com"
   }
 ]
 ```
@@ -584,6 +585,7 @@ Drop the leading slash from `image` and pass that as `fileName`.
 - **Form fields**:
   - `title`: required string
   - `image`: required image file (`image/*`)
+  "news_url": required string/url
 
 The `image` field in the response is **not** the file bytes. Use this API to fetch the uploaded image:
 
@@ -598,7 +600,8 @@ Take `image` from the create response (e.g. `/uploads/1730000000000-123456789.jp
   "id": 1,
   "title": "New township launched in Indore",
   "image": "/uploads/1730000000000-123456789.jpg",
-  "created_at": "2026-10-20T08:30:00.000Z"
+  "created_at": "2026-10-20T08:30:00.000Z",
+  "news_url": "http://www.youtube.com"
 }
 ```
 
@@ -621,6 +624,7 @@ Fetch that image:
 - **Form fields** (all optional; send only what you want to change):
   - `title`: string
   - `image`: image file (`image/*`)
+   - `news_url`: string
 
 Returns updated `NewsResponseDto`.
 

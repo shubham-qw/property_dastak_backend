@@ -7,6 +7,7 @@ type NewsRow = {
   title: string;
   image: string;
   created_at: Date;
+  news_url : string;
 };
 
 @Injectable()
@@ -17,18 +18,19 @@ export class NewsService {
       title: row.title,
       image: row.image,
       created_at: row.created_at,
+      news_url : row.news_url
     };
   }
 
   async createNews(dto: CreateNewsDto, imagePath: string): Promise<NewsResponseDto> {
     const sql = `
-      INSERT INTO news (title, image)
-      VALUES ($1, $2)
-      RETURNING id, title, image, created_at
+      INSERT INTO news (title, image, news_url)
+      VALUES ($1, $2,$3)
+      RETURNING id, title, image, created_at, news_url
     `;
 
     try {
-      const res = await dbInstance.query(sql, [dto.title, imagePath]);
+      const res = await dbInstance.query(sql, [dto.title, imagePath,dto.news_url]);
       return this.mapRowToDto(res.rows[0] as NewsRow);
     } catch (e: any) {
       throw new BadRequestException(`Failed to create news: ${e.message}`);
@@ -37,7 +39,7 @@ export class NewsService {
 
   async listLatestNews(): Promise<NewsResponseDto[]> {
     const sql = `
-      SELECT id, title, image, created_at
+      SELECT id, title, image, created_at, news_url
       FROM news
       ORDER BY created_at DESC
       LIMIT 10
@@ -52,7 +54,7 @@ export class NewsService {
     imagePath?: string,
   ): Promise<NewsResponseDto> {
     const existing = await dbInstance.query(
-      'SELECT id, title, image, created_at FROM news WHERE id = $1',
+      'SELECT id, title, image, created_at, news_url FROM news WHERE id = $1',
       [id],
     );
     if (!existing.rows.length) {
@@ -66,6 +68,12 @@ export class NewsService {
     if (dto.title !== undefined) {
       fields.push(`title = $${idx}`);
       values.push(dto.title);
+      idx++;
+    }
+
+    if (dto.news_url !== undefined) {
+      fields.push(`news_url = $${idx}`);
+      values.push(dto.news_url);
       idx++;
     }
 
@@ -83,7 +91,7 @@ export class NewsService {
       UPDATE news
       SET ${fields.join(', ')}
       WHERE id = $${idx}
-      RETURNING id, title, image, created_at
+      RETURNING id, title, image, created_at, news_url
     `;
     values.push(id);
 

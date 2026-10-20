@@ -6,3 +6,5 @@ CREATE TABLE IF NOT EXISTS news (
 );
 
 CREATE INDEX IF NOT EXISTS idx_news_created_at ON news(created_at DESC);
+
+ALTER TABLE news ADD COLUMN news_url TEXT DEFAULT NULL;
