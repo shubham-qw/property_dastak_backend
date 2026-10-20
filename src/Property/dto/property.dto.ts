@@ -238,7 +238,7 @@ export class UpdatePropertyDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsDecimal()
+//  @IsDecimal()
   price_per_sqft?: number;
 
   @IsOptional()
@@ -247,12 +247,12 @@ export class UpdatePropertyDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsDecimal()
+  //@IsDecimal()
   brokerage_charge?: number;
 
   @IsOptional()
   @Type(() => Number)
-  @IsDecimal()
+  //@IsDecimal()
   price?: number;
 
   @IsOptional()

@@ -112,10 +112,10 @@ export class PropertyService {
 
   async getHomeScreenProperties() {
     const [rent, buy, commercial, pg] = await Promise.all([
-      this.fetchTopPropertiesByFilter({ propertyFor: 'lease/rent' }, 5),
-      this.fetchTopPropertiesByFilter({ propertyFor: 'sell' }, 5),
-      this.fetchTopPropertiesByFilter({ propertyType: 'commercial' }, 5),
-      this.fetchTopPropertiesByFilter({ propertyFor: 'pg/hotel' }, 5),
+      this.fetchTopPropertiesByFilter({ propertyFor: 'lease/rent' }, 20),
+      this.fetchTopPropertiesByFilter({ propertyFor: 'sell' }, 20),
+      this.fetchTopPropertiesByFilter({ propertyType: 'commercial' }, 20),
+      this.fetchTopPropertiesByFilter({ propertyFor: 'pg/hotel' }, 20),
     ]);
 
     return { rent, buy, commercial, pg };
@@ -469,6 +469,7 @@ export class PropertyService {
         u.last_name,
         u.email,
         u.phone_number,
+	u.user_uuid,
         pd.rooms, pd.bathrooms, pd.balconies, pd.other_rooms, pd.floors,
         pk.parking_count, pk.parking_type,
         (SELECT COALESCE(array_agg(pi.url ORDER BY pi.id), ARRAY[]::text[])
@@ -534,6 +535,7 @@ export class PropertyService {
         last_name : row.last_name,
         email : row.email,
         phone_number : row.phone_number,
+	user_uuid : row.user_uuid
       }
     };
   }
