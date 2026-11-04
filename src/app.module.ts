@@ -11,6 +11,7 @@ import { ReelsModule } from './Reels/reels.module';
 import { AdminModule } from './Admin/admin.module';
 import { ChatModule } from './Chat/chat.module';
 import { NewsModule } from './News/news.module';
+import { MapsModule } from './Maps/maps.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { NewsModule } from './News/news.module';
     AdminModule,
     ChatModule,
     NewsModule,
+    MapsModule,
   ],
   controllers: [AppController],
   providers: [

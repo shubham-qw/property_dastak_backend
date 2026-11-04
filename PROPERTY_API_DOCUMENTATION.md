@@ -955,6 +955,274 @@ Base path: `/media`
 
 ---
 
+## Maps APIs
+
+Base path: `/maps`
+
+All Maps endpoints require **JWT** (`Authorization: Bearer <access_token>`).
+
+---
+
+### Setup
+
+#### 1. Enable APIs in Google Cloud Console
+
+Go to [console.cloud.google.com](https://console.cloud.google.com) and enable:
+
+- **Geocoding API** — used by `/maps/geocode` and `/maps/reverse-geocode`
+- **Places API (New)** — used by `/maps/places/autocomplete` and `/maps/places/details`
+
+> Make sure you enable **Places API (New)**, not the legacy Places API — the legacy version is deprecated and will return an error.
+
+#### 2. Create an API Key
+
+1. Go to **APIs & Services → Credentials → Create Credentials → API Key**
+2. Restrict the key to the two APIs above (recommended)
+3. Copy the key
+
+#### 4. Add to your `.env`
+
+```
+GOOGLE_MAPS_API_KEY=AIza...your_key_here
+```
+
+---
+
+### Geocoding — Address to Coordinates
+
+`GET /maps/geocode`
+
+- **Auth**: Required (JWT)
+
+#### Query params
+
+| Param | Required | Description |
+|---|---|---|
+| `address` | Yes | Human-readable address string |
+
+#### Example request
+
+```
+GET /maps/geocode?address=Connaught Place New Delhi
+Authorization: Bearer <token>
+```
+
+#### Success response (200)
+
+```json
+{
+  "place_id": "ChIJL1E7VkIDDTkRBHBMnm1mTkE",
+  "formatted_address": "Connaught Place, New Delhi, Delhi 110001, India",
+  "lat": 28.6315,
+  "lng": 77.2167,
+  "components": [
+    { "name": "Connaught Place", "short_name": "CP", "types": ["sublocality_level_1"] },
+    { "name": "New Delhi", "short_name": "New Delhi", "types": ["locality"] },
+    { "name": "Delhi", "short_name": "DL", "types": ["administrative_area_level_1"] },
+    { "name": "India", "short_name": "IN", "types": ["country"] }
+  ]
+}
+```
+
+#### Error responses
+
+- **400 Bad Request**: no results found for the given address
+- **401 Unauthorized**: missing/invalid JWT
+- **500 Internal Server Error**: API key not configured or Google returned an error
+
+---
+
+### Reverse Geocoding — Coordinates to Address
+
+`GET /maps/reverse-geocode`
+
+- **Auth**: Required (JWT)
+
+#### Query params
+
+| Param | Required | Validation | Description |
+|---|---|---|---|
+| `lat` | Yes | -90 to 90 | Latitude |
+| `lng` | Yes | -180 to 180 | Longitude |
+
+#### Example request
+
+```
+GET /maps/reverse-geocode?lat=28.6315&lng=77.2167
+Authorization: Bearer <token>
+```
+
+#### Success response (200)
+
+```json
+{
+  "place_id": "ChIJL1E7VkIDDTkRBHBMnm1mTkE",
+  "formatted_address": "Connaught Place, New Delhi, Delhi 110001, India",
+  "lat": 28.6315,
+  "lng": 77.2167,
+  "components": [
+    { "name": "Connaught Place", "short_name": "CP", "types": ["sublocality_level_1"] },
+    { "name": "New Delhi", "short_name": "New Delhi", "types": ["locality"] },
+    { "name": "India", "short_name": "IN", "types": ["country"] }
+  ]
+}
+```
+
+#### Error responses
+
+- **400 Bad Request**: no results found for the given coordinates
+- **401 Unauthorized**: missing/invalid JWT
+
+---
+
+### Places Autocomplete — Search Suggestions
+
+`GET /maps/places/autocomplete`
+
+- **Auth**: Required (JWT)
+- Returns up to 5 place suggestions for a partial search string.
+
+#### Query params
+
+| Param | Required | Description |
+|---|---|---|
+| `input` | Yes | Partial search text (e.g. `andheri`) |
+| `language` | No | BCP-47 language code (e.g. `en`, `hi`). Defaults to Google's auto-detect. |
+| `region` | No | ISO 3166-1 alpha-2 country code(s) to restrict results. Single: `IN`. Multiple (pipe-separated): `IN\|US` |
+| `type_filter` | No | Filter result types. Options: `geocode`, `address`, `establishment`, `cities`, `regions`. Multiple (pipe-separated): `address\|cities` |
+
+#### Example requests
+
+Autocomplete within India, in English:
+```
+GET /maps/places/autocomplete?input=andheri&language=en&region=IN
+Authorization: Bearer <token>
+```
+
+Autocomplete restricted to addresses only:
+```
+GET /maps/places/autocomplete?input=sagarp&language=en&region=IN&type_filter=address
+Authorization: Bearer <token>
+```
+
+#### Success response (200)
+
+```json
+{
+  "predictions": [
+    {
+      "place_id": "ChIJP0mGRw_B5zsRgBfxfnj0mCA",
+      "description": "Andheri, Mumbai, Maharashtra, India",
+      "main_text": "Andheri",
+      "secondary_text": "Mumbai, Maharashtra, India",
+      "types": ["sublocality", "political", "geocode"]
+    },
+    {
+      "place_id": "ChIJFc9LZRPB5zsRdrQe1dlW3Xo",
+      "description": "Andheri East, Mumbai, Maharashtra, India",
+      "main_text": "Andheri East",
+      "secondary_text": "Mumbai, Maharashtra, India",
+      "types": ["sublocality", "political", "geocode"]
+    }
+  ]
+}
+```
+
+If no matches are found, `predictions` returns an empty array — not a 404.
+
+#### Error responses
+
+- **400 Bad Request**: `input` is missing or empty
+- **401 Unauthorized**: missing/invalid JWT
+
+---
+
+### Place Details — Full Details by Place ID
+
+`GET /maps/places/details`
+
+- **Auth**: Required (JWT)
+- Fetches the full details of a place using its `place_id` (obtained from autocomplete).
+
+#### Query params
+
+| Param | Required | Description |
+|---|---|---|
+| `place_id` | Yes | The place ID from an autocomplete `predictions[].place_id` |
+| `language` | No | BCP-47 language code for localised names (e.g. `en`, `hi`) |
+
+#### Example request
+
+```
+GET /maps/places/details?place_id=ChIJP0mGRw_B5zsRgBfxfnj0mCA&language=en
+Authorization: Bearer <token>
+```
+
+#### Success response (200)
+
+```json
+{
+  "place_id": "ChIJP0mGRw_B5zsRgBfxfnj0mCA",
+  "name": "Andheri",
+  "formatted_address": "Andheri, Mumbai, Maharashtra 400053, India",
+  "lat": 19.1136,
+  "lng": 72.8697,
+  "types": ["sublocality_level_1", "sublocality", "political"],
+  "components": [
+    { "name": "Andheri", "short_name": "Andheri", "types": ["sublocality_level_1"] },
+    { "name": "Mumbai", "short_name": "Mumbai", "types": ["locality"] },
+    { "name": "Maharashtra", "short_name": "MH", "types": ["administrative_area_level_1"] },
+    { "name": "India", "short_name": "IN", "types": ["country"] }
+  ],
+  "maps_uri": "https://maps.google.com/?cid=..."
+}
+```
+
+#### Error responses
+
+- **400 Bad Request**: `place_id` is missing, empty, or not found
+- **401 Unauthorized**: missing/invalid JWT
+
+---
+
+### Typical Usage Flow
+
+The autocomplete and details endpoints are designed to be used together for a location-picker:
+
+```
+Step 1 — User types in search box
+  → GET /maps/places/autocomplete?input=<text>&region=IN
+  ← Show predictions[] as dropdown suggestions
+
+Step 2 — User selects a suggestion
+  → GET /maps/places/details?place_id=<selected place_id>
+  ← Use lat/lng to store coordinates, formatted_address for display
+```
+
+---
+
+### Response field reference
+
+#### `AddressComponent`
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | string | Full component name (e.g. `Maharashtra`) |
+| `short_name` | string | Abbreviated name (e.g. `MH`) |
+| `types` | string[] | Component type tags (e.g. `["administrative_area_level_1"]`) |
+
+#### `PlacePrediction`
+
+| Field | Type | Description |
+|---|---|---|
+| `place_id` | string | Unique place identifier — pass to `/maps/places/details` |
+| `description` | string | Full human-readable label |
+| `main_text` | string | Primary part of the label (e.g. place name) |
+| `secondary_text` | string | Secondary part (e.g. city, state, country) |
+| `types` | string[] | Place type tags |
+
+---
+
 ## Root Health Endpoint
 
 `GET /`
